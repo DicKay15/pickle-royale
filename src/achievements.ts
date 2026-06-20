@@ -7,6 +7,7 @@ export interface Achievement {
   label: string;
   emoji: string;
   how: string;
+  countable?: boolean; // can be earned multiple times → shows ×2, ×3, ...
 }
 
 export const ACHIEVEMENTS: Achievement[] = [
@@ -18,9 +19,22 @@ export const ACHIEVEMENTS: Achievement[] = [
     label: "Pickler",
     emoji: "🥒",
     how: "Win a match with your opponent stuck on 0 (a pickle / skunk).",
+    countable: true,
   },
-  { key: "onfire", label: "On Fire", emoji: "🔥", how: "Win 3 matches in a row." },
-  { key: "streaker", label: "5-Win Streak", emoji: "⚡", how: "Win 5 matches in a row." },
+  {
+    key: "onfire",
+    label: "On Fire",
+    emoji: "🔥",
+    how: "Win 3 matches in a row.",
+    countable: true,
+  },
+  {
+    key: "streaker",
+    label: "5-Win Streak",
+    emoji: "⚡",
+    how: "Win 5 matches in a row.",
+    countable: true,
+  },
   {
     key: "ironman",
     label: "Iron Man",

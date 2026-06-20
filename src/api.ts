@@ -72,6 +72,7 @@ export interface Profile extends Player {
   teammates: Breakdown[];
   opponents: Breakdown[];
   badges: Badge[];
+  badgeCounts: Record<string, number>;
 }
 
 export interface PartnerStat extends Player {

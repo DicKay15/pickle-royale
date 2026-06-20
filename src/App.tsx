@@ -8,10 +8,11 @@ import AddPlayerSheet from "./components/AddPlayerSheet";
 import Login from "./components/Login";
 import GroupPicker from "./components/GroupPicker";
 import GroupSheet from "./components/GroupSheet";
-import MeTab from "./components/MeTab";
+import StatsTab from "./components/StatsTab";
+import ProfileTab from "./components/ProfileTab";
 import ClaimSheet from "./components/ClaimSheet";
 
-export type Tab = "board" | "log" | "history" | "me";
+export type Tab = "board" | "log" | "history" | "stats" | "profile";
 
 const TAGLINES = [
   "Rankings · Rumbles · Respect",
@@ -178,7 +179,6 @@ export default function App() {
             id={profileId}
             version={version}
             isAdmin={currentGroup.role === "admin"}
-            advanced={me.user.advancedMode}
             onBack={() => setProfileId(null)}
             onChanged={() => {
               loadMe();
@@ -204,8 +204,14 @@ export default function App() {
             onAddPlayer={() => setAddOpen(true)}
             showToast={showToast}
           />
-        ) : tab === "me" ? (
-          <MeTab
+        ) : tab === "stats" ? (
+          <StatsTab
+            currentGroup={currentGroup}
+            version={version}
+            onClaim={() => setClaimOpen(true)}
+          />
+        ) : tab === "profile" ? (
+          <ProfileTab
             me={me}
             currentGroup={currentGroup}
             version={version}
@@ -230,12 +236,12 @@ export default function App() {
             Standings
           </button>
           <button
-            className={`tab-btn ${tab === "me" && profileId === null ? "active" : ""}`}
-            onClick={() => openTab("me")}
-            aria-label="My profile"
+            className={`tab-btn ${tab === "history" && profileId === null ? "active" : ""}`}
+            onClick={() => openTab("history")}
+            aria-label="Match history"
           >
-            <span className="ico">👤</span>
-            Me
+            <span className="ico">📜</span>
+            Rumbles
           </button>
           <button
             className="tab-log"
@@ -245,12 +251,20 @@ export default function App() {
             +
           </button>
           <button
-            className={`tab-btn ${tab === "history" && profileId === null ? "active" : ""}`}
-            onClick={() => openTab("history")}
-            aria-label="Match history"
+            className={`tab-btn ${tab === "stats" && profileId === null ? "active" : ""}`}
+            onClick={() => openTab("stats")}
+            aria-label="Your stats"
           >
-            <span className="ico">📜</span>
-            Rumbles
+            <span className="ico">📊</span>
+            Stats
+          </button>
+          <button
+            className={`tab-btn ${tab === "profile" && profileId === null ? "active" : ""}`}
+            onClick={() => openTab("profile")}
+            aria-label="Your profile"
+          >
+            <span className="ico">👤</span>
+            Profile
           </button>
         </div>
       </nav>

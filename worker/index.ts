@@ -578,15 +578,40 @@ app.get("/api/groups/:gid/players/:id", async (c) => {
     gamesByPlayer.set(e.playerId, (gamesByPlayer.get(e.playerId) ?? 0) + 1);
   const maxGames = Math.max(0, ...gamesByPlayer.values());
   const total = wins + losses;
+
+  // count repeatable streak achievements (each separate run that reached the
+  // threshold counts once) for the ×2/×3 multipliers
+  let onfireRuns = 0;
+  let streakerRuns = 0;
+  let r = 0;
+  for (const e of myEvents) {
+    if (e.delta >= 0) r++;
+    else {
+      if (r >= 3) onfireRuns++;
+      if (r >= 5) streakerRuns++;
+      r = 0;
+    }
+  }
+  if (r >= 3) onfireRuns++;
+  if (r >= 5) streakerRuns++;
+
   const badges: { key: string; label: string; emoji: string }[] = [];
   if (wins >= 1) badges.push({ key: "first_win", label: "First Win", emoji: "🎉" });
   if (total >= 10) badges.push({ key: "ten", label: "10 Games", emoji: "🏓" });
   if (total >= 50) badges.push({ key: "fifty", label: "50 Games", emoji: "🏅" });
   if (picklesGiven >= 1) badges.push({ key: "pickler", label: "Pickler", emoji: "🥒" });
-  if (curStreak >= 3) badges.push({ key: "onfire", label: "On Fire", emoji: "🔥" });
-  if (longestWin >= 5) badges.push({ key: "streaker", label: "5-Win Streak", emoji: "⚡" });
+  if (onfireRuns >= 1) badges.push({ key: "onfire", label: "On Fire", emoji: "🔥" });
+  if (streakerRuns >= 1)
+    badges.push({ key: "streaker", label: "5-Win Streak", emoji: "⚡" });
   if (total > 0 && total === maxGames)
     badges.push({ key: "ironman", label: "Iron Man", emoji: "💪" });
+
+  // how many times the repeatable ones were earned (for the multiplier)
+  const badgeCounts: Record<string, number> = {
+    pickler: picklesGiven,
+    onfire: onfireRuns,
+    streaker: streakerRuns,
+  };
 
   // rank among players who have played
   const rankedBoard = players
@@ -627,6 +652,7 @@ app.get("/api/groups/:gid/players/:id", async (c) => {
     teammates: breakdown(partnerStats),
     opponents: breakdown(opponentStats),
     badges,
+    badgeCounts,
   });
 });
 

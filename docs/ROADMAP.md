@@ -68,6 +68,17 @@ status at the last update.
 
 **v4 is complete.** 🎉
 
+### v4.1 — Stats / Profile split + polish
+- [x] Bottom nav reordered to 5: **Standings · Rumbles · ＋ · Stats · Profile**
+- [x] **Stats tab** (own): rating journey, form, rivalries, playstyle, teammate +
+      opponent breakdowns
+- [x] **Profile tab** (own): profile/claim, your groups, achievements, account,
+      settings, manage-group (admin), sign out (the "Me" title removed)
+- [x] Standings detail page (other players) no longer shows achievements (private)
+- [x] Achievements show **×N multipliers** (Pickler, On Fire, 5-Win Streak)
+- [x] Rating journey chart is **hold-and-drag scrubbable**, with a small pill
+      (rating + that game's delta)
+
 ---
 
 ## In progress / next

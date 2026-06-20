@@ -5,10 +5,11 @@ import {
   type GroupSummary,
   type Me,
   type MeGroup,
+  type Profile as ProfileData,
 } from "../api";
-import Profile from "./Profile";
+import { ProfileHero, AchievementsGrid } from "./profileParts";
 
-export default function MeTab({
+export default function ProfileTab({
   me,
   currentGroup,
   version,
@@ -25,16 +26,28 @@ export default function MeTab({
   onRefresh: () => void;
   showToast: (m: string) => void;
 }) {
-  const advanced = me.user.advancedMode;
   const isAdmin = currentGroup.role === "admin";
+  const pid = currentGroup.myPlayerId;
 
+  // own profile (hero + achievements) when claimed
+  const [p, setP] = useState<ProfileData | null>(null);
+  useEffect(() => {
+    if (pid == null) {
+      setP(null);
+      return;
+    }
+    setP(null);
+    api.profile(pid).then(setP).catch(() => setP(null));
+  }, [pid, version, currentGroup.id]);
+
+  // cross-group summary
   const [summary, setSummary] = useState<GroupSummary[] | null>(null);
   useEffect(() => {
     api.summary().then((d) => setSummary(d.summary)).catch(() => setSummary([]));
   }, [version]);
 
-  // advanced mode toggle
-  const [adv, setAdv] = useState(advanced);
+  // advanced mode
+  const [adv, setAdv] = useState(me.user.advancedMode);
   const [savingAdv, setSavingAdv] = useState(false);
   const toggleAdv = async () => {
     if (savingAdv) return;
@@ -53,7 +66,7 @@ export default function MeTab({
     }
   };
 
-  // admin: members-can-add toggle
+  // admin: members-can-add
   const [allowAdd, setAllowAdd] = useState(!!currentGroup.allowMemberAdd);
   const [savingAdd, setSavingAdd] = useState(false);
   const toggleAllowAdd = async () => {
@@ -72,7 +85,7 @@ export default function MeTab({
     }
   };
 
-  // admin: claim requests inbox
+  // admin: claim requests
   const [claims, setClaims] = useState<ClaimRequest[] | null>(null);
   const [resolving, setResolving] = useState<number | null>(null);
   useEffect(() => {
@@ -109,10 +122,26 @@ export default function MeTab({
 
   return (
     <div className="page">
-      <h2 className="page-title">Me</h2>
+      {/* profile hero, or a claim prompt if not linked here */}
+      {pid != null ? (
+        p ? (
+          <ProfileHero p={p} />
+        ) : (
+          <div className="skel" style={{ height: 90, marginBottom: 14 }} />
+        )
+      ) : (
+        <div className="empty" style={{ marginBottom: 14 }}>
+          <img className="load-mascot" src="/mascot.svg" alt="" style={{ width: 90 }} />
+          <h3>You're not on the board yet</h3>
+          <p>Claim your player to get your own profile in {currentGroup.name}.</p>
+          <button className="cta" style={{ marginTop: 12 }} onClick={onClaim}>
+            Claim your player
+          </button>
+        </div>
+      )}
 
-      {/* cross-group summary */}
-      {summary && summary.length > 1 && (
+      {/* your groups */}
+      {summary && summary.length > 0 && (
         <div className="xg-card">
           <div className="xg-title">Your groups</div>
           {summary.map((s) => (
@@ -134,27 +163,24 @@ export default function MeTab({
         </div>
       )}
 
-      {/* your profile in the current group */}
-      {currentGroup.myPlayerId != null ? (
-        <Profile
-          id={currentGroup.myPlayerId}
-          version={version}
-          isAdmin={isAdmin}
-          advanced={advanced}
-          embedded
-          onChanged={onRefresh}
-          showToast={showToast}
-        />
-      ) : (
-        <div className="empty" style={{ marginBottom: 14 }}>
-          <img className="load-mascot" src="/mascot.svg" alt="" style={{ width: 90 }} />
-          <h3>You're not on the board yet</h3>
-          <p>Claim your player to get your own stats in {currentGroup.name}.</p>
-          <button className="cta" style={{ marginTop: 12 }} onClick={onClaim}>
-            Claim your player
-          </button>
+      {/* achievements (only when you own a player here) */}
+      {p && <AchievementsGrid badges={p.badges} counts={p.badgeCounts} />}
+
+      {/* account / email */}
+      <div className="section-head plain">Account</div>
+      <div className="acct-who">
+        {me.user.avatarUrl ? (
+          <img className="acct-av" src={me.user.avatarUrl} alt="" referrerPolicy="no-referrer" />
+        ) : (
+          <div className="acct-av acct-av-fallback">
+            {(me.user.name ?? me.user.email)[0]?.toUpperCase()}
+          </div>
+        )}
+        <div className="acct-who-text">
+          <div className="acct-name">{me.user.name ?? "Signed in"}</div>
+          <div className="acct-email">{me.user.email}</div>
         </div>
-      )}
+      </div>
 
       {/* settings */}
       <div className="section-head plain">Settings</div>
@@ -168,26 +194,8 @@ export default function MeTab({
         <span className="knob" />
       </button>
       <div className="acct-hint">
-        Personal stats, rivalries, badges, weekly movers, and a nudge from your last
-        game.
+        Adds a last-game nudge and a weekly movers card to the Standings page.
       </div>
-
-      <div className="acct-who" style={{ marginTop: 16 }}>
-        {me.user.avatarUrl ? (
-          <img className="acct-av" src={me.user.avatarUrl} alt="" referrerPolicy="no-referrer" />
-        ) : (
-          <div className="acct-av acct-av-fallback">
-            {(me.user.name ?? me.user.email)[0]?.toUpperCase()}
-          </div>
-        )}
-        <div className="acct-who-text">
-          <div className="acct-name">{me.user.name ?? "Signed in"}</div>
-          <div className="acct-email">{me.user.email}</div>
-        </div>
-      </div>
-      <button className="cta secondary" style={{ marginTop: 12 }} onClick={signOut}>
-        Sign out
-      </button>
 
       {/* manage group (admin only) */}
       {isAdmin && (
@@ -243,6 +251,10 @@ export default function MeTab({
           )}
         </>
       )}
+
+      <button className="cta secondary" style={{ marginTop: 18 }} onClick={signOut}>
+        Sign out
+      </button>
     </div>
   );
 }

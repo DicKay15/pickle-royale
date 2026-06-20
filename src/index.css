@@ -560,17 +560,17 @@ input {
   align-items: center;
   gap: 1px;
   color: rgba(251, 246, 234, 0.6);
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  padding: 8px 14px;
+  letter-spacing: 0.01em;
+  padding: 7px 6px;
   border-radius: 999px;
-  min-width: 64px;
+  min-width: 52px;
   transition: background 0.2s, color 0.2s;
 }
 
 .tab-btn .ico {
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
 }
 
@@ -2504,6 +2504,63 @@ input {
   font-weight: 600;
   font-size: 12px;
   color: var(--ink-soft);
+}
+
+/* achievement multiplier */
+.ach-mult {
+  margin-left: 5px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--coral);
+}
+.ach.locked .ach-mult {
+  display: none;
+}
+
+/* rating journey: scrub pill */
+.chart-wrap {
+  position: relative;
+  touch-action: none;
+  cursor: ew-resize;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.chart-pill {
+  position: absolute;
+  transform: translate(-50%, -130%);
+  background: var(--ink);
+  color: var(--cream);
+  border-radius: 8px;
+  padding: 3px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+.cp-rating {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 14px;
+}
+.cp-delta {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 12px;
+}
+.cp-delta.up {
+  color: var(--lime);
+}
+.cp-delta.down {
+  color: var(--coral);
+}
+.chart-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-align: center;
+  margin-top: 8px;
 }
 
 /* respect reduced motion */
