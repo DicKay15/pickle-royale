@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { api, type Profile as ProfileData } from "../api";
+import Avatar from "./Avatar";
+import InfoSheet from "./InfoSheet";
+import { STAT_INFO, type Info } from "../statInfo";
+import { ACHIEVEMENTS } from "../achievements";
 
-function RatingChart({
-  history,
-}: {
-  history: { rating: number }[];
-}) {
+function RatingChart({ history }: { history: { rating: number }[] }) {
   const data = [1200, ...history.map((h) => h.rating)];
   if (data.length < 2)
     return (
@@ -23,7 +23,6 @@ function RatingChart({
   const y = (v: number) => h - pad - ((v - min) / range) * (h - pad * 2);
   const pts = data.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
   const last = data[data.length - 1];
-
   return (
     <svg
       viewBox={`0 0 ${w} ${h}`}
@@ -31,7 +30,6 @@ function RatingChart({
       role="img"
       aria-label="Rating history chart"
     >
-      {/* baseline at 1200 */}
       <line
         x1={pad}
         x2={w - pad}
@@ -78,6 +76,7 @@ export default function Profile({
   version,
   isAdmin,
   advanced,
+  embedded,
   onBack,
   onChanged,
   showToast,
@@ -86,7 +85,8 @@ export default function Profile({
   version: number;
   isAdmin: boolean;
   advanced: boolean;
-  onBack: () => void;
+  embedded?: boolean;
+  onBack?: () => void;
   onChanged: () => void;
   showToast: (m: string) => void;
 }) {
@@ -94,12 +94,10 @@ export default function Profile({
   const [error, setError] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviting, setInviting] = useState(false);
+  const [info, setInfo] = useState<Info | null>(null);
 
   useEffect(() => {
-    api
-      .profile(id)
-      .then(setP)
-      .catch((e) => setError(e.message));
+    api.profile(id).then(setP).catch((e) => setError(e.message));
   }, [id, version]);
 
   const invite = async () => {
@@ -123,9 +121,11 @@ export default function Profile({
       <div className="page empty">
         <span className="big">🤔</span>
         <h3>Player not found</h3>
-        <button className="cta secondary" style={{ marginTop: 12 }} onClick={onBack}>
-          ← Back
-        </button>
+        {!embedded && onBack && (
+          <button className="cta secondary" style={{ marginTop: 12 }} onClick={onBack}>
+            ← Back
+          </button>
+        )}
       </div>
     );
 
@@ -141,168 +141,196 @@ export default function Profile({
   const total = p.wins + p.losses;
   const winRate = total ? Math.round((p.wins / total) * 100) : 0;
 
+  // a tappable stat cell that opens the explainer
+  const Cell = ({
+    infoKey,
+    label,
+    children,
+  }: {
+    infoKey: string;
+    label: string;
+    children: ReactNode;
+  }) => (
+    <button
+      className="stat-cell tappable"
+      onClick={() => setInfo(STAT_INFO[infoKey])}
+    >
+      <div className="k">
+        {label} <span className="info-dot">ⓘ</span>
+      </div>
+      <div className="v">{children}</div>
+    </button>
+  );
+
+  const rival = (r: ProfileData["bestPartner"]) =>
+    r ? (
+      <>
+        {r.emoji} {r.name}
+      </>
+    ) : (
+      <span style={{ color: "var(--ink-soft)" }}>TBD</span>
+    );
+
   return (
     <div className="page">
-      <button className="back-btn" onClick={onBack}>
-        ← Standings
-      </button>
+      {!embedded && onBack && (
+        <button className="back-btn" onClick={onBack}>
+          ← Standings
+        </button>
+      )}
 
+      {/* HERO */}
       <div className="profile-hero">
-        <div className="big-av">{p.emoji}</div>
+        <Avatar className="big-av" emoji={p.emoji} avatarUrl={p.avatarUrl} />
         <div>
           <h2>{p.name}</h2>
           <div className="meta">
-            {p.wins}W – {p.losses}L{total > 0 ? ` · ${winRate}% wins` : ""}
+            {p.rank ? `#${p.rank}` : "Unranked"} · {p.wins}W–{p.losses}L
+            {total > 0 ? ` · ${winRate}%` : ""}
           </div>
         </div>
         <div className="num">{Math.round(p.rating)}</div>
       </div>
 
+      {/* RATING JOURNEY */}
+      <button
+        className="section-head"
+        onClick={() => setInfo(STAT_INFO.ratingJourney)}
+      >
+        Rating journey <span className="info-dot">ⓘ</span>
+      </button>
       <div className="chart-card">
-        <h4>Rating journey</h4>
         <RatingChart history={p.history} />
       </div>
 
+      {/* FORM */}
+      <div className="section-head plain">Form</div>
       <div className="stat-grid">
-        <div className="stat-cell">
-          <div className="k">Dream partner</div>
-          <div className="v">
-            {p.bestPartner ? (
-              <>
-                {p.bestPartner.emoji} {p.bestPartner.name}
-                <span style={{ color: "var(--court)", fontSize: 12 }}>
-                  {Math.round(p.bestPartner.winRate * 100)}%
-                </span>
-              </>
-            ) : (
-              <span style={{ color: "var(--ink-soft)" }}>TBD</span>
-            )}
-          </div>
-        </div>
-        <div className="stat-cell">
-          <div className="k">Nemesis</div>
-          <div className="v">
-            {p.nemesis ? (
-              <>
-                {p.nemesis.emoji} {p.nemesis.name}
-                <span style={{ color: "var(--coral)", fontSize: 12 }}>
-                  {Math.round(p.nemesis.winRate * 100)}% vs
-                </span>
-              </>
-            ) : (
-              <span style={{ color: "var(--ink-soft)" }}>TBD</span>
-            )}
-          </div>
-        </div>
-        <div className="stat-cell">
-          <div className="k">Matches</div>
-          <div className="v">{total}</div>
-        </div>
-        <div className="stat-cell">
-          <div className="k">Biggest heist</div>
-          <div className="v">
-            {p.biggestWin ? (
-              <span className="delta up">+{Math.round(p.biggestWin.delta)} pts</span>
-            ) : (
-              <span style={{ color: "var(--ink-soft)" }}>TBD</span>
-            )}
-          </div>
-        </div>
+        <Cell infoKey="currentStreak" label="Current streak">
+          {streakLabel(p.currentStreak)}
+        </Cell>
+        <Cell infoKey="longestWinStreak" label="Longest win streak">
+          {p.longestWinStreak}
+        </Cell>
+        <Cell infoKey="matches" label="Matches">
+          {total}
+        </Cell>
+        <Cell infoKey="biggestHeist" label="Biggest heist">
+          {p.biggestWin ? (
+            <span className="delta up">+{Math.round(p.biggestWin.delta)}</span>
+          ) : (
+            <span style={{ color: "var(--ink-soft)" }}>TBD</span>
+          )}
+        </Cell>
       </div>
 
+      {/* RIVALRIES (highlights, always shown) */}
+      <div className="section-head plain">Rivalries &amp; chemistry</div>
+      <div className="stat-grid">
+        <Cell infoKey="dreamPartner" label="Dream partner">
+          {rival(p.bestPartner)}
+        </Cell>
+        <Cell infoKey="nemesis" label="Nemesis">
+          {rival(p.nemesis)}
+        </Cell>
+        <Cell infoKey="favouriteVictim" label="Favourite victim">
+          {rival(p.favouriteVictim)}
+        </Cell>
+      </div>
+
+      {/* ACHIEVEMENTS (earned + locked) */}
+      <div className="section-head plain">Achievements</div>
+      <div className="ach-grid">
+        {ACHIEVEMENTS.map((a) => {
+          const earned = p.badges.some((b) => b.key === a.key);
+          return (
+            <button
+              key={a.key}
+              className={`ach ${earned ? "earned" : "locked"}`}
+              onClick={() =>
+                setInfo({
+                  title: a.label,
+                  body: earned ? `Earned! ${a.how}` : `Locked. ${a.how}`,
+                })
+              }
+            >
+              <span className="ach-emoji">{earned ? a.emoji : "🔒"}</span>
+              <span className="ach-label">{a.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ADVANCED: playstyle + breakdown tables */}
       {advanced && (
         <>
-          {p.badges.length > 0 && (
-            <div className="badge-row">
-              {p.badges.map((b) => (
-                <span key={b.key} className="badge">
-                  {b.emoji} {b.label}
-                </span>
-              ))}
-            </div>
-          )}
-
+          <div className="section-head plain">Playstyle</div>
           <div className="stat-grid">
-            <div className="stat-cell">
-              <div className="k">Current streak</div>
-              <div className="v">{streakLabel(p.currentStreak)}</div>
-            </div>
-            <div className="stat-cell">
-              <div className="k">Carry score</div>
-              <div className="v">
-                {p.carryScore}%
-                <span style={{ fontSize: 11, color: "var(--ink-soft)" }}>
-                  {p.carryScore >= 55
-                    ? "carrier"
-                    : p.carryScore <= 45
-                      ? "carried"
-                      : "balanced"}
-                </span>
-              </div>
-            </div>
-            <div className="stat-cell">
-              <div className="k">Clutch (by 2)</div>
-              <div className="v">
-                {p.clutch.wins}–{p.clutch.losses}
-              </div>
-            </div>
-            <div className="stat-cell">
-              <div className="k">Pickles</div>
-              <div className="v">
-                🥒 {p.picklesGiven} <span style={{ color: "var(--ink-soft)" }}>·</span>{" "}
-                😵 {p.picklesTaken}
-              </div>
-            </div>
-            <div className="stat-cell">
-              <div className="k">Favourite victim</div>
-              <div className="v">
-                {p.favouriteVictim ? (
-                  <>
-                    {p.favouriteVictim.emoji} {p.favouriteVictim.name}
-                  </>
-                ) : (
-                  <span style={{ color: "var(--ink-soft)" }}>TBD</span>
-                )}
-              </div>
-            </div>
-            <div className="stat-cell">
-              <div className="k">Longest win streak</div>
-              <div className="v">{p.longestWinStreak}</div>
-            </div>
+            <Cell infoKey="carryScore" label="Carry score">
+              {p.carryScore}%{" "}
+              <span style={{ fontSize: 11, color: "var(--ink-soft)" }}>
+                {p.carryScore >= 55
+                  ? "carrier"
+                  : p.carryScore <= 45
+                    ? "carried"
+                    : "balanced"}
+              </span>
+            </Cell>
+            <Cell infoKey="clutch" label="Clutch (by 2)">
+              {p.clutch.wins}–{p.clutch.losses}
+            </Cell>
+            <Cell infoKey="pickles" label="Pickles">
+              🥒 {p.picklesGiven} · 😵 {p.picklesTaken}
+            </Cell>
           </div>
 
           {p.teammates.length > 0 && (
-            <div className="bd-card">
-              <h4>With teammates</h4>
-              {p.teammates.slice(0, 6).map((t) => (
-                <div key={t.id} className="bd-row">
-                  <span className="bd-emoji">{t.emoji}</span>
-                  <span className="bd-name">{t.name}</span>
-                  <span className="bd-rec">
-                    {t.wins}–{t.losses}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <>
+              <button
+                className="section-head"
+                onClick={() => setInfo(STAT_INFO.teammates)}
+              >
+                With teammates <span className="info-dot">ⓘ</span>
+              </button>
+              <div className="bd-card">
+                {p.teammates.slice(0, 6).map((t) => (
+                  <div key={t.id} className="bd-row">
+                    <Avatar className="bd-emoji" emoji={t.emoji} />
+                    <span className="bd-name">{t.name}</span>
+                    <span className="bd-rec">
+                      {t.wins}–{t.losses}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
           {p.opponents.length > 0 && (
-            <div className="bd-card">
-              <h4>Against opponents</h4>
-              {p.opponents.slice(0, 6).map((o) => (
-                <div key={o.id} className="bd-row">
-                  <span className="bd-emoji">{o.emoji}</span>
-                  <span className="bd-name">{o.name}</span>
-                  <span className="bd-rec">
-                    {o.wins}–{o.losses}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <>
+              <button
+                className="section-head"
+                onClick={() => setInfo(STAT_INFO.opponents)}
+              >
+                Against opponents <span className="info-dot">ⓘ</span>
+              </button>
+              <div className="bd-card">
+                {p.opponents.slice(0, 6).map((o) => (
+                  <div key={o.id} className="bd-row">
+                    <Avatar className="bd-emoji" emoji={o.emoji} />
+                    <span className="bd-name">{o.name}</span>
+                    <span className="bd-rec">
+                      {o.wins}–{o.losses}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </>
       )}
 
+      {/* claim status / admin invite */}
       {p.ownerUserId != null ? (
         <div className="claimed-note">✅ This player has been claimed</div>
       ) : (
@@ -334,6 +362,8 @@ export default function Profile({
           </div>
         )
       )}
+
+      <InfoSheet info={info} onClose={() => setInfo(null)} />
     </div>
   );
 }

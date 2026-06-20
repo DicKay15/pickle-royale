@@ -7,10 +7,11 @@ import Profile from "./components/Profile";
 import AddPlayerSheet from "./components/AddPlayerSheet";
 import Login from "./components/Login";
 import GroupPicker from "./components/GroupPicker";
-import AccountSheet from "./components/AccountSheet";
+import GroupSheet from "./components/GroupSheet";
+import MeTab from "./components/MeTab";
 import ClaimSheet from "./components/ClaimSheet";
 
-export type Tab = "board" | "log" | "history";
+export type Tab = "board" | "log" | "history" | "me";
 
 const TAGLINES = [
   "Rankings · Rumbles · Respect",
@@ -37,7 +38,7 @@ export default function App() {
   const [me, setMe] = useState<Me | null | undefined>(undefined);
   const [currentGroupId, setCurrentGroupId] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
+  const [groupOpen, setGroupOpen] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
 
   const [tab, setTab] = useState<Tab>("board");
@@ -165,7 +166,7 @@ export default function App() {
         </div>
       </header>
 
-      <button className="group-bar" onClick={() => setAccountOpen(true)}>
+      <button className="group-bar" onClick={() => setGroupOpen(true)}>
         <span className="gb-name">👥 {currentGroup.name}</span>
         <span className="gb-code">#{currentGroup.code}</span>
         <span className="gb-caret">⌄</span>
@@ -203,6 +204,16 @@ export default function App() {
             onAddPlayer={() => setAddOpen(true)}
             showToast={showToast}
           />
+        ) : tab === "me" ? (
+          <MeTab
+            me={me}
+            currentGroup={currentGroup}
+            version={version}
+            onSwitch={switchGroup}
+            onClaim={() => setClaimOpen(true)}
+            onRefresh={() => loadMe()}
+            showToast={showToast}
+          />
         ) : (
           <History version={version} onChanged={refresh} showToast={showToast} />
         )}
@@ -217,6 +228,14 @@ export default function App() {
           >
             <span className="ico">🏆</span>
             Standings
+          </button>
+          <button
+            className={`tab-btn ${tab === "me" && profileId === null ? "active" : ""}`}
+            onClick={() => openTab("me")}
+            aria-label="My profile"
+          >
+            <span className="ico">👤</span>
+            Me
           </button>
           <button
             className="tab-log"
@@ -247,17 +266,16 @@ export default function App() {
         />
       )}
 
-      {accountOpen && (
-        <AccountSheet
+      {groupOpen && (
+        <GroupSheet
           me={me}
           currentGroupId={currentGroup.id}
           onSwitch={switchGroup}
           onAddGroup={() => {
-            setAccountOpen(false);
+            setGroupOpen(false);
             setPickerOpen(true);
           }}
-          onRefresh={() => loadMe()}
-          onClose={() => setAccountOpen(false)}
+          onClose={() => setGroupOpen(false)}
           showToast={showToast}
         />
       )}

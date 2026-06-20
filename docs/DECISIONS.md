@@ -112,3 +112,35 @@ Simplest robust option for this scale.
 **Server-first routing for `/auth/*` and `/api/*`.** Required so browser navigations
 to sign-in reach the Worker instead of the single-page-app fallback. See
 [HURDLES.md](HURDLES.md) for the full story; this one cost real time.
+
+---
+
+## Profile & information architecture (v4)
+
+**Dedicated "Me" tab.** A person can be in several groups but mostly cares about
+their own stats, so the Me tab gives one-tap access to your profile, plus a
+cross-group summary (your rank in each crew). Chosen over hunting for yourself on
+the leaderboard.
+
+**Profile organised into labelled sections.** The old profile was a flat wall of
+stat cards. v4 groups them under headings (Form, Rivalries, Achievements, and an
+advanced Playstyle + breakdowns), so it scans top-to-bottom and hierarchy is clear.
+
+**Tap any stat to learn what it means.** Every stat and badge opens a bottom-sheet
+explainer. Removes the guesswork without cluttering the cards.
+
+**Google profile photos, automatic, no uploads.** We already capture each user's
+Google avatar at login, so a claimed player simply shows their photo (emoji stays
+for unclaimed players and as a fallback). Custom uploads were declined to avoid
+standing up file storage.
+
+**Group bar is just switching + invite code.** Everything else that had piled into
+it (advanced mode, sign out, members-can-add, claim approvals) moved into the Me tab
+(Settings + Manage group), so each surface does one clear job.
+
+**Achievements show earned + locked.** A chase list is more motivating than only
+showing what you already have.
+
+**Fix: nemesis vs favourite victim.** With few games someone could be both (100%
+either way). Now nemesis requires a losing record against them and favourite victim
+a winning record, else they stay empty.

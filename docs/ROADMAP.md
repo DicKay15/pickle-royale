@@ -52,6 +52,22 @@ status at the last update.
 
 **v3 is complete.** 🎉
 
+### v4 — Profile & IA overhaul
+- [x] Dedicated **Me tab** (4th nav item) with a cross-group summary (your rank +
+      rating in each group; tap to switch) and your own profile inline
+- [x] **Profile rebuilt with hierarchy:** clear sections (Hero, Rating journey,
+      Form, Rivalries, Achievements, and advanced Playstyle + breakdown tables)
+- [x] **Tap any stat or badge** for a plain-English explainer (bottom sheet)
+- [x] **Google profile photos** auto-shown for claimed players (emoji fallback)
+- [x] **Achievements** as an earned + locked chase grid
+- [x] **Decluttered group bar** (switch + invite code only); Settings (advanced
+      mode, sign out) and admin "Manage group" (members-can-add, claim approvals)
+      moved into the Me tab
+- [x] Fix: Nemesis only shows someone you lose to; Favourite victim only someone
+      you beat (no more both being the same person)
+
+**v4 is complete.** 🎉
+
 ---
 
 ## In progress / next

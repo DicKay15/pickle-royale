@@ -6,6 +6,7 @@ import {
   type Motivation,
   type Movers,
 } from "../api";
+import Avatar from "./Avatar";
 
 function Sparkline({ data }: { data: number[] }) {
   if (data.length < 2) return null;
@@ -190,7 +191,11 @@ export default function Leaderboard({
             </div>
             <div className="champ-label">Reigning Champ</div>
             <div className="champ-row">
-              <div className="champ-emoji">{champ.emoji}</div>
+              <Avatar
+                className="champ-emoji"
+                emoji={champ.emoji}
+                avatarUrl={champ.avatarUrl}
+              />
               <div>
                 <div className="champ-name">
                   {champ.name}
@@ -220,7 +225,7 @@ export default function Leaderboard({
                 onClick={() => onSelect(p.id)}
               >
                 <span className="rank-no">{i + 2}</span>
-                <span className="row-emoji">{p.emoji}</span>
+                <Avatar className="row-emoji" emoji={p.emoji} avatarUrl={p.avatarUrl} />
                 <span className="row-main">
                   <span className="row-name">
                     {p.name}
@@ -262,7 +267,7 @@ export default function Leaderboard({
                     onClick={() => onSelect(p.id)}
                   >
                     <span className="rank-no">–</span>
-                    <span className="row-emoji">{p.emoji}</span>
+                    <Avatar className="row-emoji" emoji={p.emoji} avatarUrl={p.avatarUrl} />
                     <span className="row-main">
                       <span className="row-name">{p.name}</span>
                       <span className="row-sub">yet to rumble</span>

@@ -66,6 +66,7 @@ interface PlayerRow {
   emoji: string;
   active: number;
   owner_user_id: number | null;
+  owner_avatar: string | null; // Google photo of the owner, when claimed
   invited_email: string | null;
   created_at: string;
 }
@@ -110,7 +111,11 @@ async function loadMatches(db: D1Database, groupId: number): Promise<MatchRow[]>
 
 async function loadPlayers(db: D1Database, groupId: number): Promise<PlayerRow[]> {
   const { results } = await db
-    .prepare("SELECT * FROM players WHERE group_id = ? ORDER BY id ASC")
+    .prepare(
+      `SELECT p.*, u.avatar_url AS owner_avatar
+       FROM players p LEFT JOIN users u ON u.id = p.owner_user_id
+       WHERE p.group_id = ? ORDER BY p.id ASC`,
+    )
     .bind(groupId)
     .all<PlayerRow>();
   return results;
@@ -207,6 +212,77 @@ app.patch("/api/me", requireUser, async (c) => {
       .run();
   }
   return c.json({ ok: true });
+});
+
+/** Cross-group summary for the signed-in user: their rank + record in each group. */
+app.get("/api/me/summary", requireUser, async (c) => {
+  const user = c.get("user");
+  const db = c.env.DB;
+  const { results: memberships } = await db
+    .prepare(
+      `SELECT g.id, g.name, gm.role,
+         (SELECT id FROM players WHERE group_id = g.id AND owner_user_id = ? LIMIT 1) AS my_player_id
+       FROM group_members gm JOIN groups g ON g.id = gm.group_id
+       WHERE gm.user_id = ? ORDER BY gm.joined_at ASC`,
+    )
+    .bind(user.id, user.id)
+    .all<{ id: number; name: string; role: string; my_player_id: number | null }>();
+
+  const summary = [];
+  for (const m of memberships) {
+    const row: {
+      groupId: number;
+      groupName: string;
+      role: string;
+      myPlayerId: number | null;
+      playerName: string | null;
+      emoji: string | null;
+      avatarUrl: string | null;
+      rank: number | null;
+      rating: number | null;
+      wins: number;
+      losses: number;
+    } = {
+      groupId: m.id,
+      groupName: m.name,
+      role: m.role,
+      myPlayerId: m.my_player_id,
+      playerName: null,
+      emoji: null,
+      avatarUrl: null,
+      rank: null,
+      rating: null,
+      wins: 0,
+      losses: 0,
+    };
+    if (m.my_player_id != null) {
+      const [players, matchRows] = await Promise.all([
+        loadPlayers(db, m.id),
+        loadMatches(db, m.id),
+      ]);
+      const { ratings, events } = replayMatches(matchRows.map(toMatchRecord));
+      const ranked = players
+        .filter((p) => p.active)
+        .map((p) => ({
+          id: p.id,
+          rating: ratings[p.id]?.rating ?? BASE_RATING,
+          games: events.filter((e) => e.playerId === p.id).length,
+        }))
+        .filter((p) => p.games > 0)
+        .sort((a, b) => b.rating - a.rating);
+      const idx = ranked.findIndex((p) => p.id === m.my_player_id);
+      const mePlayer = players.find((p) => p.id === m.my_player_id);
+      for (const e of events.filter((e) => e.playerId === m.my_player_id))
+        e.delta >= 0 ? row.wins++ : row.losses++;
+      row.playerName = mePlayer?.name ?? null;
+      row.emoji = mePlayer?.emoji ?? null;
+      row.avatarUrl = mePlayer?.owner_avatar ?? null;
+      row.rating = Math.round(ratings[m.my_player_id]?.rating ?? BASE_RATING);
+      row.rank = idx >= 0 ? idx + 1 : null;
+    }
+    summary.push(row);
+  }
+  return c.json({ summary });
 });
 
 app.post("/api/groups", requireUser, async (c) => {
@@ -331,6 +407,7 @@ app.get("/api/groups/:gid/leaderboard", async (c) => {
         spark,
         provisional: evs.length < 10,
         ownerUserId: p.owner_user_id,
+        avatarUrl: p.owner_avatar,
       };
     })
     .sort((a, b) => b.rating - a.rating);
@@ -511,19 +588,34 @@ app.get("/api/groups/:gid/players/:id", async (c) => {
   if (total > 0 && total === maxGames)
     badges.push({ key: "ironman", label: "Iron Man", emoji: "💪" });
 
+  // rank among players who have played
+  const rankedBoard = players
+    .filter((pl) => pl.active && (gamesByPlayer.get(pl.id) ?? 0) > 0)
+    .map((pl) => ({ id: pl.id, rating: ratings[pl.id]?.rating ?? BASE_RATING }))
+    .sort((a, b) => b.rating - a.rating);
+  const myRankIdx = rankedBoard.findIndex((pl) => pl.id === id);
+
   return c.json({
     id: me.id,
     name: me.name,
     emoji: me.emoji,
     rating: ratings[id]?.rating ?? BASE_RATING,
+    rank: myRankIdx >= 0 ? myRankIdx + 1 : null,
     wins,
     losses,
     history,
     bestPartner: describe(partnerStats, true),
-    nemesis: describe(opponentStats, false),
-    favouriteVictim: describe(opponentStats, true),
+    // nemesis = worst opponent you actually LOSE to; favourite victim = best
+    // opponent you actually BEAT. Avoids both pointing at the same person.
+    nemesis: ((n) => (n && n.winRate < 0.5 ? n : null))(
+      describe(opponentStats, false),
+    ),
+    favouriteVictim: ((f) => (f && f.winRate > 0.5 ? f : null))(
+      describe(opponentStats, true),
+    ),
     biggestWin,
     ownerUserId: me.owner_user_id,
+    avatarUrl: me.owner_avatar,
     invitedEmail: me.invited_email,
     currentStreak: curStreak,
     longestWinStreak: longestWin,

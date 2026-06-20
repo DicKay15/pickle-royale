@@ -56,8 +56,13 @@ groups), and data never crosses between groups.
 - **v3 Phase 2** — Claiming + invites (auto-link, request/approve, admin inbox). Shipped.
 - **v3 Phase 3** — Advanced mode: stats, rivalries, badges, weekly movers, motivation. Shipped.
 
-**v3 is complete.** The app now has the full ranking experience, accounts, private
-groups, claiming/invites, and an opt-in advanced stats layer.
+- **v4** — Profile & IA overhaul: a dedicated **Me tab** (with cross-group summary),
+  a sectioned profile with tap-to-learn explainers, **Google profile photos**,
+  earned + locked achievements, and a decluttered group bar. Shipped.
+
+**v4 is complete.** The app now has the full ranking experience, accounts, private
+groups, claiming/invites, an opt-in advanced stats layer, and a polished profile/Me
+tab with photos and explainers.
 
 See [ROADMAP.md](ROADMAP.md) for the detail.
 

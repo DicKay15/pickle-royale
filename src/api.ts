@@ -16,6 +16,7 @@ export interface BoardEntry extends Player {
   spark: number[];
   provisional: boolean;
   ownerUserId: number | null;
+  avatarUrl: string | null;
 }
 
 export interface MatchPlayer extends Player {
@@ -49,6 +50,7 @@ export interface LogResult {
 
 export interface Profile extends Player {
   rating: number;
+  rank: number | null;
   wins: number;
   losses: number;
   history: { matchId: number; playedAt: string; rating: number; delta: number }[];
@@ -57,6 +59,7 @@ export interface Profile extends Player {
   favouriteVictim: PartnerStat | null;
   biggestWin: { matchId: number; delta: number } | null;
   ownerUserId: number | null;
+  avatarUrl: string | null;
   invitedEmail: string | null;
   // advanced (Phase 3)
   currentStreak: number;
@@ -114,6 +117,20 @@ export interface Movers {
     winRate: number;
   } | null;
   playedThisWeek: boolean;
+}
+
+export interface GroupSummary {
+  groupId: number;
+  groupName: string;
+  role: "admin" | "member";
+  myPlayerId: number | null;
+  playerName: string | null;
+  emoji: string | null;
+  avatarUrl: string | null;
+  rank: number | null;
+  rating: number | null;
+  wins: number;
+  losses: number;
 }
 
 export interface MeGroup {
@@ -192,6 +209,7 @@ export const api = {
       body: JSON.stringify({ advancedMode }),
     }),
   logout: () => req<{ ok: true }>("/auth/logout", { method: "POST" }),
+  summary: () => req<{ summary: GroupSummary[] }>("/api/me/summary"),
 
   // groups
   createGroup: (name: string) =>
