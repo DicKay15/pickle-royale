@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { api, type Me } from "../api";
+import { useEffect, useState } from "react";
+import { api, type ClaimRequest, type Me } from "../api";
 
 export default function AccountSheet({
   me,
@@ -21,6 +21,32 @@ export default function AccountSheet({
   const current = me.groups.find((g) => g.id === currentGroupId);
   const [allowAdd, setAllowAdd] = useState(!!current?.allowMemberAdd);
   const [savingAdd, setSavingAdd] = useState(false);
+  const [claims, setClaims] = useState<ClaimRequest[] | null>(null);
+  const [resolving, setResolving] = useState<number | null>(null);
+
+  const isAdmin = current?.role === "admin";
+
+  useEffect(() => {
+    if (isAdmin && current && current.pendingClaims > 0) {
+      api.claims().then((d) => setClaims(d.claims)).catch(() => setClaims([]));
+    }
+  }, [isAdmin, current]);
+
+  const resolveClaim = async (cid: number, approve: boolean) => {
+    if (resolving) return;
+    setResolving(cid);
+    try {
+      if (approve) await api.approveClaim(cid);
+      else await api.denyClaim(cid);
+      setClaims((cs) => (cs ? cs.filter((c) => c.id !== cid) : cs));
+      onRefresh();
+      showToast(approve ? "Claim approved ✅" : "Claim denied");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Couldn't update");
+    } finally {
+      setResolving(null);
+    }
+  };
 
   const copyCode = async () => {
     if (!current) return;
@@ -122,6 +148,45 @@ export default function AccountSheet({
                 <span className="knob" />
               </button>
             )}
+          </>
+        )}
+
+        {isAdmin && claims && claims.length > 0 && (
+          <>
+            <div className="acct-label">Claim requests</div>
+            <div className="acct-groups">
+              {claims.map((c) => (
+                <div key={c.id} className="claim-req">
+                  <div className="cr-top">
+                    <span className="row-emoji">{c.playerEmoji}</span>
+                    <div className="cr-text">
+                      <div className="cr-name">
+                        {c.requesterName || c.requesterEmail}
+                      </div>
+                      <div className="cr-sub">
+                        wants to be <b>{c.playerName}</b>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="cr-actions">
+                    <button
+                      className="cr-deny"
+                      disabled={resolving !== null}
+                      onClick={() => resolveClaim(c.id, false)}
+                    >
+                      Deny
+                    </button>
+                    <button
+                      className="cr-approve"
+                      disabled={resolving !== null}
+                      onClick={() => resolveClaim(c.id, true)}
+                    >
+                      Approve
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         )}
 

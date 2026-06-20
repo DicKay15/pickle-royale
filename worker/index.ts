@@ -155,11 +155,13 @@ app.get("/api/me", requireUser, async (c) => {
   const { results: groups } = await c.env.DB.prepare(
     `SELECT g.id, g.name, g.code, g.allow_member_add, gm.role, gm.can_add_players,
        (SELECT id FROM players WHERE group_id = g.id AND owner_user_id = ? LIMIT 1) AS my_player_id,
-       (SELECT name FROM players WHERE group_id = g.id AND owner_user_id = ? LIMIT 1) AS my_player_name
+       (SELECT name FROM players WHERE group_id = g.id AND owner_user_id = ? LIMIT 1) AS my_player_name,
+       (SELECT COUNT(*) FROM claim_requests WHERE group_id = g.id AND status = 'pending') AS pending_claims,
+       (SELECT COUNT(*) FROM claim_requests WHERE group_id = g.id AND requester_user_id = ? AND status = 'pending') AS my_pending
      FROM group_members gm JOIN groups g ON g.id = gm.group_id
      WHERE gm.user_id = ? ORDER BY gm.joined_at ASC`,
   )
-    .bind(user.id, user.id, user.id)
+    .bind(user.id, user.id, user.id, user.id)
     .all<{
       id: number;
       name: string;
@@ -169,6 +171,8 @@ app.get("/api/me", requireUser, async (c) => {
       can_add_players: number;
       my_player_id: number | null;
       my_player_name: string | null;
+      pending_claims: number;
+      my_pending: number;
     }>();
 
   return c.json({
@@ -188,6 +192,8 @@ app.get("/api/me", requireUser, async (c) => {
       canAddPlayers: !!g.can_add_players,
       myPlayerId: g.my_player_id,
       myPlayerName: g.my_player_name,
+      pendingClaims: g.pending_claims,
+      myPending: g.my_pending,
     })),
   });
 });
@@ -438,6 +444,8 @@ app.get("/api/groups/:gid/players/:id", async (c) => {
     bestPartner: describe(partnerStats, true),
     nemesis: describe(opponentStats, false),
     biggestWin,
+    ownerUserId: me.owner_user_id,
+    invitedEmail: me.invited_email,
   });
 });
 
@@ -659,6 +667,223 @@ app.patch("/api/groups/:gid/settings", async (c) => {
       .run();
   }
   return c.json({ ok: true });
+});
+
+// ---------- claim / invite (Phase 2) ----------
+
+/** Admin or the player's adder attaches an invite email to an unclaimed player.
+ *  If a user with that email already exists, link them right away. */
+app.post("/api/groups/:gid/players/:id/invite", async (c) => {
+  const gid = c.get("groupId");
+  const user = c.get("user");
+  const pid = Number(c.req.param("id"));
+  const body = (await c.req.json().catch(() => ({}))) as { email?: string };
+  const email = (body.email ?? "").trim().toLowerCase();
+  if (!email || !email.includes("@")) {
+    return c.json({ error: "Enter a valid email" }, 400);
+  }
+
+  const player = await c.env.DB.prepare(
+    "SELECT id, owner_user_id, added_by_user_id FROM players WHERE id = ? AND group_id = ?",
+  )
+    .bind(pid, gid)
+    .first<{
+      id: number;
+      owner_user_id: number | null;
+      added_by_user_id: number | null;
+    }>();
+  if (!player) return c.json({ error: "Player not found" }, 404);
+  if (player.owner_user_id) {
+    return c.json({ error: "That player is already claimed" }, 409);
+  }
+  if (c.get("role") !== "admin" && player.added_by_user_id !== user.id) {
+    return c.json({ error: "Only an admin or whoever added this player can invite" }, 403);
+  }
+
+  const existing = await c.env.DB.prepare("SELECT id FROM users WHERE email = ?")
+    .bind(email)
+    .first<{ id: number }>();
+  if (existing) {
+    const owns = await c.env.DB.prepare(
+      "SELECT 1 FROM players WHERE group_id = ? AND owner_user_id = ?",
+    )
+      .bind(gid, existing.id)
+      .first();
+    if (owns) {
+      return c.json({ error: "That person already has a player in this group" }, 409);
+    }
+    await c.env.DB.batch([
+      c.env.DB.prepare(
+        "UPDATE players SET owner_user_id = ?, invited_email = ? WHERE id = ?",
+      ).bind(existing.id, email, pid),
+      c.env.DB.prepare(
+        "INSERT OR IGNORE INTO group_members (group_id, user_id, role, can_add_players) VALUES (?, ?, 'member', 0)",
+      ).bind(gid, existing.id),
+    ]);
+    return c.json({ linked: true });
+  }
+
+  await c.env.DB.prepare("UPDATE players SET invited_email = ? WHERE id = ?")
+    .bind(email, pid)
+    .run();
+  return c.json({ invited: true });
+});
+
+/** A signed-in user asks to own a player (auto-linked if pre-invited). */
+app.post("/api/groups/:gid/players/:id/claim", async (c) => {
+  const gid = c.get("groupId");
+  const user = c.get("user");
+  const pid = Number(c.req.param("id"));
+
+  const already = await c.env.DB.prepare(
+    "SELECT id FROM players WHERE group_id = ? AND owner_user_id = ?",
+  )
+    .bind(gid, user.id)
+    .first<{ id: number }>();
+  if (already) {
+    return c.json({ error: "You already own a player in this group" }, 409);
+  }
+
+  const player = await c.env.DB.prepare(
+    "SELECT id, owner_user_id, invited_email FROM players WHERE id = ? AND group_id = ?",
+  )
+    .bind(pid, gid)
+    .first<{ id: number; owner_user_id: number | null; invited_email: string | null }>();
+  if (!player) return c.json({ error: "Player not found" }, 404);
+  if (player.owner_user_id) {
+    return c.json({ error: "That player is already claimed" }, 409);
+  }
+
+  // auto-approve if their email was pre-attached
+  if (
+    player.invited_email &&
+    player.invited_email.toLowerCase() === user.email.toLowerCase()
+  ) {
+    await c.env.DB.batch([
+      c.env.DB.prepare(
+        "UPDATE players SET owner_user_id = ? WHERE id = ? AND owner_user_id IS NULL",
+      ).bind(user.id, pid),
+      c.env.DB.prepare(
+        "UPDATE claim_requests SET status = 'approved', resolved_at = datetime('now') WHERE player_id = ? AND status = 'pending'",
+      ).bind(pid),
+    ]);
+    return c.json({ linked: true });
+  }
+
+  const dup = await c.env.DB.prepare(
+    "SELECT id FROM claim_requests WHERE group_id = ? AND player_id = ? AND requester_user_id = ? AND status = 'pending'",
+  )
+    .bind(gid, pid, user.id)
+    .first();
+  if (!dup) {
+    await c.env.DB.prepare(
+      "INSERT INTO claim_requests (group_id, player_id, requester_user_id) VALUES (?, ?, ?)",
+    )
+      .bind(gid, pid, user.id)
+      .run();
+  }
+  return c.json({ requested: true });
+});
+
+/** Admin: list pending claim requests for the group. */
+app.get("/api/groups/:gid/claims", async (c) => {
+  if (c.get("role") !== "admin") return c.json({ error: "Admins only" }, 403);
+  const { results } = await c.env.DB.prepare(
+    `SELECT cr.id, cr.player_id, p.name AS player_name, p.emoji AS player_emoji,
+            u.name AS requester_name, u.email AS requester_email
+     FROM claim_requests cr
+     JOIN players p ON p.id = cr.player_id
+     JOIN users u ON u.id = cr.requester_user_id
+     WHERE cr.group_id = ? AND cr.status = 'pending'
+     ORDER BY cr.created_at ASC`,
+  )
+    .bind(c.get("groupId"))
+    .all<{
+      id: number;
+      player_id: number;
+      player_name: string;
+      player_emoji: string;
+      requester_name: string | null;
+      requester_email: string;
+    }>();
+  return c.json({
+    claims: results.map((r) => ({
+      id: r.id,
+      playerId: r.player_id,
+      playerName: r.player_name,
+      playerEmoji: r.player_emoji,
+      requesterName: r.requester_name,
+      requesterEmail: r.requester_email,
+    })),
+  });
+});
+
+/** Admin: approve a claim (links the player + denies competing requests). */
+app.post("/api/groups/:gid/claims/:cid/approve", async (c) => {
+  if (c.get("role") !== "admin") return c.json({ error: "Admins only" }, 403);
+  const gid = c.get("groupId");
+  const cid = Number(c.req.param("cid"));
+  const resolver = c.get("user").id;
+
+  const cr = await c.env.DB.prepare(
+    "SELECT id, player_id, requester_user_id, status FROM claim_requests WHERE id = ? AND group_id = ?",
+  )
+    .bind(cid, gid)
+    .first<{
+      id: number;
+      player_id: number;
+      requester_user_id: number;
+      status: string;
+    }>();
+  if (!cr || cr.status !== "pending") return c.json({ error: "Request not found" }, 404);
+
+  const player = await c.env.DB.prepare(
+    "SELECT owner_user_id FROM players WHERE id = ? AND group_id = ?",
+  )
+    .bind(cr.player_id, gid)
+    .first<{ owner_user_id: number | null }>();
+  const owns = await c.env.DB.prepare(
+    "SELECT 1 FROM players WHERE group_id = ? AND owner_user_id = ?",
+  )
+    .bind(gid, cr.requester_user_id)
+    .first();
+  if (player?.owner_user_id || owns) {
+    await c.env.DB.prepare(
+      "UPDATE claim_requests SET status='denied', resolved_by=?, resolved_at=datetime('now') WHERE id=?",
+    )
+      .bind(resolver, cid)
+      .run();
+    return c.json({ error: "That player or person is already linked" }, 409);
+  }
+
+  await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE players SET owner_user_id = ? WHERE id = ?").bind(
+      cr.requester_user_id,
+      cr.player_id,
+    ),
+    c.env.DB.prepare(
+      "INSERT OR IGNORE INTO group_members (group_id, user_id, role, can_add_players) VALUES (?, ?, 'member', 0)",
+    ).bind(gid, cr.requester_user_id),
+    c.env.DB.prepare(
+      "UPDATE claim_requests SET status='approved', resolved_by=?, resolved_at=datetime('now') WHERE id=?",
+    ).bind(resolver, cid),
+    c.env.DB.prepare(
+      "UPDATE claim_requests SET status='denied', resolved_by=?, resolved_at=datetime('now') WHERE player_id=? AND status='pending' AND id<>?",
+    ).bind(resolver, cr.player_id, cid),
+  ]);
+  return c.json({ approved: true });
+});
+
+/** Admin: deny a claim. */
+app.post("/api/groups/:gid/claims/:cid/deny", async (c) => {
+  if (c.get("role") !== "admin") return c.json({ error: "Admins only" }, 403);
+  const res = await c.env.DB.prepare(
+    "UPDATE claim_requests SET status='denied', resolved_by=?, resolved_at=datetime('now') WHERE id=? AND group_id=? AND status='pending'",
+  )
+    .bind(c.get("user").id, Number(c.req.param("cid")), c.get("groupId"))
+    .run();
+  if (res.meta.changes === 0) return c.json({ error: "Request not found" }, 404);
+  return c.json({ denied: true });
 });
 
 // ---------- SPA fallback for everything else ----------

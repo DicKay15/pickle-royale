@@ -70,14 +70,22 @@ function RatingChart({
 export default function Profile({
   id,
   version,
+  isAdmin,
   onBack,
+  onChanged,
+  showToast,
 }: {
   id: number;
   version: number;
+  isAdmin: boolean;
   onBack: () => void;
+  onChanged: () => void;
+  showToast: (m: string) => void;
 }) {
   const [p, setP] = useState<ProfileData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     api
@@ -85,6 +93,22 @@ export default function Profile({
       .then(setP)
       .catch((e) => setError(e.message));
   }, [id, version]);
+
+  const invite = async () => {
+    const email = inviteEmail.trim();
+    if (!email || inviting) return;
+    setInviting(true);
+    try {
+      const res = await api.invitePlayer(id, email);
+      showToast(res.linked ? "Linked! They're in. 🎉" : "Invite saved ✉️");
+      setInviteEmail("");
+      onChanged();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Couldn't invite");
+    } finally {
+      setInviting(false);
+    }
+  };
 
   if (error)
     return (
@@ -177,6 +201,38 @@ export default function Profile({
           </div>
         </div>
       </div>
+
+      {p.ownerUserId != null ? (
+        <div className="claimed-note">✅ This player has been claimed</div>
+      ) : (
+        isAdmin && (
+          <div className="invite-card">
+            <h4>Invite {p.name} to claim this profile</h4>
+            <p>
+              Attach their email and they'll get this player (with all its history)
+              automatically when they sign in.
+            </p>
+            <div className="invite-row">
+              <input
+                className="field-input"
+                style={{ marginBottom: 0 }}
+                type="email"
+                inputMode="email"
+                placeholder="their@gmail.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && invite()}
+              />
+              <button className="cta" disabled={inviting} onClick={invite}>
+                {inviting ? "…" : "Invite"}
+              </button>
+            </div>
+            {p.invitedEmail && (
+              <div className="field-hint">Currently invited: {p.invitedEmail}</div>
+            )}
+          </div>
+        )
+      )}
     </div>
   );
 }

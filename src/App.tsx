@@ -8,6 +8,7 @@ import AddPlayerSheet from "./components/AddPlayerSheet";
 import Login from "./components/Login";
 import GroupPicker from "./components/GroupPicker";
 import AccountSheet from "./components/AccountSheet";
+import ClaimSheet from "./components/ClaimSheet";
 
 export type Tab = "board" | "log" | "history";
 
@@ -37,6 +38,7 @@ export default function App() {
   const [currentGroupId, setCurrentGroupId] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [claimOpen, setClaimOpen] = useState(false);
 
   const [tab, setTab] = useState<Tab>("board");
   const [profileId, setProfileId] = useState<number | null>(null);
@@ -174,14 +176,22 @@ export default function App() {
           <Profile
             id={profileId}
             version={version}
+            isAdmin={currentGroup.role === "admin"}
             onBack={() => setProfileId(null)}
+            onChanged={() => {
+              loadMe();
+              refresh();
+            }}
+            showToast={showToast}
           />
         ) : tab === "board" ? (
           <Leaderboard
             version={version}
+            meGroup={currentGroup}
             onSelect={setProfileId}
             onAdd={() => setAddOpen(true)}
             onLog={() => openTab("log")}
+            onClaim={() => setClaimOpen(true)}
           />
         ) : tab === "log" ? (
           <LogMatch
@@ -254,6 +264,17 @@ export default function App() {
         <GroupPicker
           onPicked={(g) => onPickedGroup(g.id)}
           onClose={() => setPickerOpen(false)}
+          showToast={showToast}
+        />
+      )}
+
+      {claimOpen && (
+        <ClaimSheet
+          onClose={() => setClaimOpen(false)}
+          onClaimed={() => {
+            loadMe();
+            refresh();
+          }}
           showToast={showToast}
         />
       )}

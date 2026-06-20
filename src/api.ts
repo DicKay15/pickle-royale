@@ -55,6 +55,8 @@ export interface Profile extends Player {
   bestPartner: PartnerStat | null;
   nemesis: PartnerStat | null;
   biggestWin: { matchId: number; delta: number } | null;
+  ownerUserId: number | null;
+  invitedEmail: string | null;
 }
 
 export interface PartnerStat extends Player {
@@ -72,6 +74,17 @@ export interface MeGroup {
   canAddPlayers: boolean;
   myPlayerId: number | null;
   myPlayerName: string | null;
+  pendingClaims: number; // pending claim requests in this group (for admins)
+  myPending: number; // claim requests I have pending here
+}
+
+export interface ClaimRequest {
+  id: number;
+  playerId: number;
+  playerName: string;
+  playerEmoji: string;
+  requesterName: string | null;
+  requesterEmail: string;
 }
 
 export interface Me {
@@ -177,5 +190,26 @@ export const api = {
   deleteMatch: (id: number) =>
     req<{ ok: true }>(`/api/groups/${gid()}/matches/${id}`, {
       method: "DELETE",
+    }),
+
+  // claiming + invites (Phase 2)
+  invitePlayer: (playerId: number, email: string) =>
+    req<{ linked?: boolean; invited?: boolean }>(
+      `/api/groups/${gid()}/players/${playerId}/invite`,
+      { method: "POST", body: JSON.stringify({ email }) },
+    ),
+  claimPlayer: (playerId: number) =>
+    req<{ linked?: boolean; requested?: boolean }>(
+      `/api/groups/${gid()}/players/${playerId}/claim`,
+      { method: "POST" },
+    ),
+  claims: () => req<{ claims: ClaimRequest[] }>(`/api/groups/${gid()}/claims`),
+  approveClaim: (cid: number) =>
+    req<{ approved: true }>(`/api/groups/${gid()}/claims/${cid}/approve`, {
+      method: "POST",
+    }),
+  denyClaim: (cid: number) =>
+    req<{ denied: true }>(`/api/groups/${gid()}/claims/${cid}/deny`, {
+      method: "POST",
     }),
 };

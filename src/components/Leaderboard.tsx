@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, type BoardEntry } from "../api";
+import { api, type BoardEntry, type MeGroup } from "../api";
 
 function Sparkline({ data }: { data: number[] }) {
   if (data.length < 2) return null;
@@ -76,14 +76,18 @@ const randomLine = () =>
 
 export default function Leaderboard({
   version,
+  meGroup,
   onSelect,
   onAdd,
   onLog,
+  onClaim,
 }: {
   version: number;
+  meGroup: MeGroup;
   onSelect: (id: number) => void;
   onAdd: () => void;
   onLog: () => void;
+  onClaim: () => void;
 }) {
   const [board, setBoard] = useState<BoardEntry[] | null>(null);
   const [totalMatches, setTotalMatches] = useState(0);
@@ -130,9 +134,25 @@ export default function Leaderboard({
   const ranked = board.filter((p) => p.matches > 0);
   const bench = board.filter((p) => p.matches === 0);
   const [champ, ...rest] = ranked;
+  const myId = meGroup.myPlayerId;
+
+  // prompt to claim your player (only if you don't own one here yet)
+  const claimBanner =
+    myId == null ? (
+      meGroup.myPending > 0 ? (
+        <div className="claim-banner pending">
+          ⏳ Claim sent — waiting for the admin to approve.
+        </div>
+      ) : (
+        <button className="claim-banner" onClick={onClaim}>
+          👋 Which one is you? <b>Claim your player</b>
+        </button>
+      )
+    ) : null;
 
   return (
     <div className="page">
+      {claimBanner}
       {hasGames && champ ? (
         <>
           <section
@@ -149,7 +169,10 @@ export default function Leaderboard({
             <div className="champ-row">
               <div className="champ-emoji">{champ.emoji}</div>
               <div>
-                <div className="champ-name">{champ.name}</div>
+                <div className="champ-name">
+                  {champ.name}
+                  {champ.id === myId && <span className="you-pill">you</span>}
+                </div>
                 <div className="champ-title">The Don of Dink</div>
                 <div className="champ-record">
                   {champ.wins}W – {champ.losses}L
@@ -176,7 +199,10 @@ export default function Leaderboard({
                 <span className="rank-no">{i + 2}</span>
                 <span className="row-emoji">{p.emoji}</span>
                 <span className="row-main">
-                  <span className="row-name">{p.name}</span>
+                  <span className="row-name">
+                    {p.name}
+                    {p.id === myId && <span className="you-pill">you</span>}
+                  </span>
                   <span className={`row-title ${title.spoon ? "spoon" : ""}`}>
                     {title.text}
                   </span>

@@ -32,16 +32,17 @@ status at the last update.
 - [x] Account sheet (groups, switch, share code, members-can-add toggle, sign out)
 - [x] Carry slider fixed (tug-of-war) + contribution cap widened to 10/90
 
+### v3 Phase 2 — Identity: claiming + invites
+- [x] Attach an email to a player (invite); auto-link that person on sign-in
+      (immediately if they already have an account, otherwise on their next login)
+- [x] Claim flow: a user requests a player name; admin approves/denies
+- [x] "This is you" badge on the leaderboard + claimed status on profiles
+- [x] Admin inbox for pending claims (in the account sheet)
+- [x] Invite-by-email from a player's profile (admin)
+
 ---
 
 ## In progress / next
-
-### v3 Phase 2 — Identity: claiming + invites
-- [ ] Attach an email to a player (invite); auto-link that person on sign-in
-- [ ] Claim flow: a user requests a player name; admin approves/denies
-- [ ] "This is you" indicator on profiles
-- [ ] Member permissions UI (who can add players), beyond the basic toggle
-- [ ] Admin inbox for pending claims
 
 ### v3 Phase 3 — Advanced stats + motivation (opt-in via Advanced mode)
 - [ ] Personal match history (your games)
@@ -62,6 +63,8 @@ status at the last update.
 - Seasons / periodic resets with a hall of fame.
 - Doubles rotation helper (suggest balanced random teams for the night).
 - Score-by-game tracking within a match.
+- Granular per-member "can add players" permission (today it is one group-wide
+  toggle, set by the admin).
 - Push notifications ("you got passed on the ladder").
 - Export a group's stats.
 
