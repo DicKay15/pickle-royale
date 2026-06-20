@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 150">
+  <defs><clipPath id="ballc"><circle cx="60" cy="62" r="29"/></clipPath></defs>
+
+  <!-- LEGS (behind body) -->
+  <path d="M52 86 L47 120" fill="none" stroke="#142A1F" stroke-width="6.5" stroke-linecap="round"/>
+  <path d="M68 86 L73 120" fill="none" stroke="#142A1F" stroke-width="6.5" stroke-linecap="round"/>
+  <ellipse cx="44" cy="123" rx="10" ry="5.5" fill="#142A1F"/>
+  <ellipse cx="76" cy="123" rx="10" ry="5.5" fill="#142A1F"/>
+
+  <!-- RIGHT ARM (waving) -->
+  <path d="M85 66 L106 78" fill="none" stroke="#142A1F" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="108" cy="79" r="5" fill="#C9F73A" stroke="#142A1F" stroke-width="2.5"/>
+
+  <!-- LEFT ARM (raised, holding paddle) -->
+  <path d="M35 60 L20 40" fill="none" stroke="#142A1F" stroke-width="6" stroke-linecap="round"/>
+  <!-- paddle -->
+  <g transform="rotate(-18 19 33)">
+    <rect x="7" y="14" width="24" height="29" rx="7" fill="#14604A" stroke="#142A1F" stroke-width="3"/>
+    <line x1="13" y1="22" x2="25" y2="34" stroke="#0c3b2d" stroke-width="2" opacity="0.6"/>
+    <line x1="13" y1="30" x2="25" y2="42" stroke="#0c3b2d" stroke-width="2" opacity="0.6"/>
+    <rect x="15" y="41" width="8" height="11" rx="3" fill="#0c3b2d" stroke="#142A1F" stroke-width="2.5"/>
+  </g>
+  <circle cx="19" cy="39" r="5" fill="#C9F73A" stroke="#142A1F" stroke-width="2.5"/>
+
+  <!-- CROWN -->
+  <g transform="rotate(-6 60 32)">
+    <path d="M40 46 L46 20 L60 34 L72 12 L84 34 L98 20 L104 46 Z" transform="scale(0.7) translate(26 8)"
+          fill="#FFC93C" stroke="#142A1F" stroke-width="3.6" stroke-linejoin="round"/>
+  </g>
+
+  <!-- BALL BODY -->
+  <circle cx="60" cy="62" r="29" fill="#C9F73A" stroke="#142A1F" stroke-width="4"/>
+  <g clip-path="url(#ballc)"><path d="M28 70 Q60 96 92 70 L92 95 L28 95 Z" fill="#9ED11F" opacity="0.6"/></g>
+
+  <!-- gloss -->
+  <path d="M42 50 Q50 41 62 44" fill="none" stroke="#FBF6EA" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- wiffle holes -->
+  <circle cx="78" cy="56" r="2.8" fill="none" stroke="#142A1F" stroke-width="2" opacity="0.4"/>
+  <circle cx="46" cy="74" r="2.6" fill="none" stroke="#142A1F" stroke-width="1.9" opacity="0.35"/>
+
+  <!-- eyes -->
+  <circle cx="51" cy="61" r="4.4" fill="#142A1F"/>
+  <circle cx="69" cy="61" r="4.4" fill="#142A1F"/>
+  <circle cx="52.7" cy="59.4" r="1.5" fill="#FBF6EA"/>
+  <circle cx="70.7" cy="59.4" r="1.5" fill="#FBF6EA"/>
+
+  <!-- smirk -->
+  <path d="M48 71 Q60 80 73 70" fill="none" stroke="#142A1F" stroke-width="3.4" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <clipPath id="ball">
+      <circle cx="32" cy="40" r="20.5"/>
+    </clipPath>
+  </defs>
+
+  <!-- crown -->
+  <g transform="rotate(-6 32 16)">
+    <path d="M14 23 L19 10 L26 17 L32 7 L38 17 L45 10 L50 23 Z"
+          fill="#FFC93C" stroke="#142A1F" stroke-width="2.6" stroke-linejoin="round"/>
+    <rect x="15" y="22" width="34" height="6" rx="2.5"
+          fill="#FFC93C" stroke="#142A1F" stroke-width="2.4"/>
+    <circle cx="24" cy="25" r="1.7" fill="#FF6B4A" stroke="#142A1F" stroke-width="0.9"/>
+    <circle cx="32" cy="25" r="1.7" fill="#8FD8E8" stroke="#142A1F" stroke-width="0.9"/>
+    <circle cx="40" cy="25" r="1.7" fill="#FF6B4A" stroke="#142A1F" stroke-width="0.9"/>
+  </g>
+
+  <!-- ball body -->
+  <circle cx="32" cy="40" r="20.5" fill="#C9F73A" stroke="#142A1F" stroke-width="3"/>
+
+  <!-- bottom shading for depth -->
+  <g clip-path="url(#ball)">
+    <path d="M6 45 Q32 62 58 45 L58 64 L6 64 Z" fill="#9ED11F" opacity="0.6"/>
+  </g>
+
+  <!-- gloss highlight -->
+  <path d="M19 30 Q25 24 33 26" fill="none" stroke="#FBF6EA" stroke-width="3"
+        stroke-linecap="round" opacity="0.9"/>
+
+  <!-- wiffle holes (pickleball texture) -->
+  <circle cx="45" cy="35" r="2.1" fill="none" stroke="#142A1F" stroke-width="1.7" opacity="0.45"/>
+  <circle cx="21" cy="47" r="1.9" fill="none" stroke="#142A1F" stroke-width="1.6" opacity="0.4"/>
+  <circle cx="41" cy="50" r="1.7" fill="none" stroke="#142A1F" stroke-width="1.5" opacity="0.35"/>
+
+  <!-- eyes -->
+  <circle cx="26" cy="39" r="3.2" fill="#142A1F"/>
+  <circle cx="38" cy="39" r="3.2" fill="#142A1F"/>
+  <circle cx="27.3" cy="37.8" r="1.05" fill="#FBF6EA"/>
+  <circle cx="39.3" cy="37.8" r="1.05" fill="#FBF6EA"/>
+
+  <!-- cheeky smirk -->
+  <path d="M24 46 Q31 52 41 45" fill="none" stroke="#142A1F" stroke-width="2.7"
+        stroke-linecap="round"/>
+</svg>

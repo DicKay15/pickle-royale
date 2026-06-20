@@ -1,0 +1,29 @@
+{
+  "name": "pickle-royale",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "deploy": "vite build && wrangler deploy",
+    "db:local": "wrangler d1 migrations apply pickle-royale --local",
+    "db:remote": "wrangler d1 migrations apply pickle-royale --remote"
+  },
+  "dependencies": {
+    "hono": "^4.6.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250100.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.8",
+    "wrangler": "^4.100.0"
+  }
+}

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- court green background -->
+  <rect width="512" height="512" rx="110" fill="#14604A"/>
+  <!-- faint court lines -->
+  <rect x="56" y="56" width="400" height="400" rx="60" fill="none" stroke="#FBF6EA" stroke-opacity="0.14" stroke-width="10"/>
+  <line x1="256" y1="56" x2="256" y2="456" stroke="#FBF6EA" stroke-opacity="0.14" stroke-width="10"/>
+  <!-- crown -->
+  <path d="M148 150 L186 84 L232 130 L256 62 L280 130 L326 84 L364 150 Z" fill="#FFC93C" stroke="#142A1F" stroke-width="16" stroke-linejoin="round"/>
+  <!-- ball -->
+  <circle cx="256" cy="300" r="158" fill="#C9F73A" stroke="#142A1F" stroke-width="18"/>
+  <!-- wiffle holes -->
+  <circle cx="206" cy="258" r="22" fill="none" stroke="#142A1F" stroke-width="14"/>
+  <circle cx="306" cy="246" r="22" fill="none" stroke="#142A1F" stroke-width="14"/>
+  <circle cx="256" cy="330" r="22" fill="none" stroke="#142A1F" stroke-width="14"/>
+  <circle cx="345" cy="330" r="16" fill="none" stroke="#142A1F" stroke-width="12"/>
+  <circle cx="167" cy="330" r="16" fill="none" stroke="#142A1F" stroke-width="12"/>
+  <!-- smile -->
+  <path d="M216 384 Q256 416 296 384" fill="none" stroke="#142A1F" stroke-width="16" stroke-linecap="round"/>
+</svg>

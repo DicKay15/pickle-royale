@@ -1,0 +1,28 @@
+{
+  "name": "Pickle Royale",
+  "short_name": "PickleRoyale",
+  "description": "The official pickleball power rankings. Log matches, climb the ladder, claim the crown.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBF6EA",
+  "theme_color": "#FBF6EA",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
