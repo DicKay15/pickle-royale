@@ -40,19 +40,23 @@ status at the last update.
 - [x] Admin inbox for pending claims (in the account sheet)
 - [x] Invite-by-email from a player's profile (admin)
 
+### v3 Phase 3 — Advanced stats + motivation (opt-in via Advanced mode)
+- [x] Per-user Advanced mode toggle (in the account sheet)
+- [x] Personal stats on profiles: current/longest streak, carry score, clutch record
+      (games decided by 2), pickles given/taken
+- [x] Rivalries and chemistry: nemesis, favourite victim, best partner, plus
+      teammate and opponent breakdown tables
+- [x] Badges and awards (First Win, 10/50 Games, Pickler, On Fire, 5-Win Streak, Iron Man)
+- [x] Weekly movers: rank risers, most improved, power couple
+- [x] Motivation banner on the leaderboard, driven by your last game
+
+**v3 is complete.** 🎉
+
 ---
 
 ## In progress / next
 
-### v3 Phase 3 — Advanced stats + motivation (opt-in via Advanced mode)
-- [ ] Personal match history (your games)
-- [ ] Personal stats: win rate, current/longest streak, carry score, clutch record,
-      pickles given/taken
-- [ ] Rivalries and chemistry: nemesis, favourite victim, best partner, anchor,
-      head-to-head, and teammate/opponent breakdown tables
-- [ ] Badges and awards (First Win, Pickler, Comeback, Giant Killer, Iron Man, ...)
-- [ ] Weekly movers: rank changes, most improved, rivalry of the week, power couple
-- [ ] Motivation banner driven by your last game
+Nothing committed right now — see Parked ideas below for candidates.
 
 ---
 

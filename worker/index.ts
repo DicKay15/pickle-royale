@@ -376,6 +376,13 @@ app.get("/api/groups/:gid/players/:id", async (c) => {
   let wins = 0;
   let losses = 0;
   let biggestWin: { matchId: number; delta: number } | null = null;
+  // advanced accumulators
+  let contribSum = 0;
+  let contribN = 0;
+  let clutchW = 0;
+  let clutchL = 0;
+  let picklesGiven = 0;
+  let picklesTaken = 0;
 
   for (const m of matchRows) {
     const onA = m.a1 === id || m.a2 === id;
@@ -383,6 +390,22 @@ app.get("/api/groups/:gid/players/:id", async (c) => {
     if (!onA && !onB) continue;
     const won = onA ? m.score_a > m.score_b : m.score_b > m.score_a;
     won ? wins++ : losses++;
+
+    // advanced: contribution share, clutch (won/lost by exactly 2), pickles
+    const myScore = onA ? m.score_a : m.score_b;
+    const oppScore = onA ? m.score_b : m.score_a;
+    const myShare = onA
+      ? m.a1 === id
+        ? m.contrib_a
+        : 1 - m.contrib_a
+      : m.b1 === id
+        ? m.contrib_b
+        : 1 - m.contrib_b;
+    contribSum += myShare;
+    contribN++;
+    if (Math.abs(myScore - oppScore) === 2) won ? clutchW++ : clutchL++;
+    if (won && oppScore === 0) picklesGiven++;
+    if (!won && myScore === 0) picklesTaken++;
 
     const partner = onA ? (m.a1 === id ? m.a2 : m.a1) : m.b1 === id ? m.b2 : m.b1;
     const opps = onA ? [m.b1, m.b2] : [m.a1, m.a2];
@@ -433,6 +456,61 @@ app.get("/api/groups/:gid/players/:id", async (c) => {
     };
   };
 
+  // streaks
+  let curStreak = 0;
+  let longestWin = 0;
+  let longestLoss = 0;
+  let runW = 0;
+  let runL = 0;
+  for (const e of myEvents) {
+    if (e.delta >= 0) {
+      runW++;
+      runL = 0;
+      if (runW > longestWin) longestWin = runW;
+    } else {
+      runL++;
+      runW = 0;
+      if (runL > longestLoss) longestLoss = runL;
+    }
+  }
+  for (let i = myEvents.length - 1; i >= 0; i--) {
+    const w = myEvents[i].delta >= 0;
+    if (curStreak === 0) curStreak = w ? 1 : -1;
+    else if (w && curStreak > 0) curStreak++;
+    else if (!w && curStreak < 0) curStreak--;
+    else break;
+  }
+
+  const carryScore = contribN ? Math.round((contribSum / contribN) * 100) : 50;
+
+  const breakdown = (m: Map<number, { games: number; wins: number }>) =>
+    Array.from(m.entries())
+      .map(([pid, s]) => ({
+        id: pid,
+        name: names.get(pid)?.name ?? "?",
+        emoji: names.get(pid)?.emoji ?? "🏓",
+        games: s.games,
+        wins: s.wins,
+        losses: s.games - s.wins,
+      }))
+      .sort((a, b) => b.games - a.games);
+
+  // badges (group context: most games => Iron Man)
+  const gamesByPlayer = new Map<number, number>();
+  for (const e of events)
+    gamesByPlayer.set(e.playerId, (gamesByPlayer.get(e.playerId) ?? 0) + 1);
+  const maxGames = Math.max(0, ...gamesByPlayer.values());
+  const total = wins + losses;
+  const badges: { key: string; label: string; emoji: string }[] = [];
+  if (wins >= 1) badges.push({ key: "first_win", label: "First Win", emoji: "🎉" });
+  if (total >= 10) badges.push({ key: "ten", label: "10 Games", emoji: "🏓" });
+  if (total >= 50) badges.push({ key: "fifty", label: "50 Games", emoji: "🏅" });
+  if (picklesGiven >= 1) badges.push({ key: "pickler", label: "Pickler", emoji: "🥒" });
+  if (curStreak >= 3) badges.push({ key: "onfire", label: "On Fire", emoji: "🔥" });
+  if (longestWin >= 5) badges.push({ key: "streaker", label: "5-Win Streak", emoji: "⚡" });
+  if (total > 0 && total === maxGames)
+    badges.push({ key: "ironman", label: "Iron Man", emoji: "💪" });
+
   return c.json({
     id: me.id,
     name: me.name,
@@ -443,9 +521,20 @@ app.get("/api/groups/:gid/players/:id", async (c) => {
     history,
     bestPartner: describe(partnerStats, true),
     nemesis: describe(opponentStats, false),
+    favouriteVictim: describe(opponentStats, true),
     biggestWin,
     ownerUserId: me.owner_user_id,
     invitedEmail: me.invited_email,
+    currentStreak: curStreak,
+    longestWinStreak: longestWin,
+    longestLossStreak: longestLoss,
+    carryScore,
+    clutch: { wins: clutchW, losses: clutchL },
+    picklesGiven,
+    picklesTaken,
+    teammates: breakdown(partnerStats),
+    opponents: breakdown(opponentStats),
+    badges,
   });
 });
 
@@ -884,6 +973,191 @@ app.post("/api/groups/:gid/claims/:cid/deny", async (c) => {
     .run();
   if (res.meta.changes === 0) return c.json({ error: "Request not found" }, 404);
   return c.json({ denied: true });
+});
+
+// ---------- advanced: motivation + weekly movers (Phase 3) ----------
+
+/** A short, personal nudge based on the signed-in user's last game. */
+app.get("/api/groups/:gid/motivation", async (c) => {
+  const gid = c.get("groupId");
+  const user = c.get("user");
+  const db = c.env.DB;
+
+  const mine = await db
+    .prepare(
+      "SELECT id, name FROM players WHERE group_id = ? AND owner_user_id = ? LIMIT 1",
+    )
+    .bind(gid, user.id)
+    .first<{ id: number; name: string }>();
+  if (!mine) return c.json({ motivation: null });
+
+  const [players, matchRows] = await Promise.all([
+    loadPlayers(db, gid),
+    loadMatches(db, gid),
+  ]);
+  const { ratings, events } = replayMatches(matchRows.map(toMatchRecord));
+  const myEvents = events.filter((e) => e.playerId === mine.id);
+  if (myEvents.length === 0) {
+    return c.json({
+      motivation: {
+        line: `Welcome, ${mine.name}! Log your first rumble to start your climb. 🧗`,
+        tone: "neutral",
+      },
+    });
+  }
+
+  const lastMatch = [...matchRows]
+    .reverse()
+    .find((m) => [m.a1, m.a2, m.b1, m.b2].includes(mine.id))!;
+  const onA = lastMatch.a1 === mine.id || lastMatch.a2 === mine.id;
+  const myScore = onA ? lastMatch.score_a : lastMatch.score_b;
+  const oppScore = onA ? lastMatch.score_b : lastMatch.score_a;
+  const won = myScore > oppScore;
+  const margin = Math.abs(myScore - oppScore);
+
+  let cur = 0;
+  for (let i = myEvents.length - 1; i >= 0; i--) {
+    const w = myEvents[i].delta >= 0;
+    if (cur === 0) cur = w ? 1 : -1;
+    else if (w && cur > 0) cur++;
+    else if (!w && cur < 0) cur--;
+    else break;
+  }
+
+  const board = players
+    .filter((p) => p.active)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      rating: ratings[p.id]?.rating ?? BASE_RATING,
+      games: events.filter((e) => e.playerId === p.id).length,
+    }))
+    .filter((p) => p.games > 0)
+    .sort((a, b) => b.rating - a.rating);
+  const myIdx = board.findIndex((p) => p.id === mine.id);
+  const above = myIdx > 0 ? board[myIdx - 1] : null;
+  const gap = above ? Math.max(1, Math.ceil(above.rating - board[myIdx].rating)) : 0;
+
+  let line: string;
+  let tone: "win" | "loss" | "neutral";
+  if (won && oppScore === 0) {
+    line = `🥒 You PICKLED them ${myScore}-0 last time. Absolutely ruthless.`;
+    tone = "win";
+  } else if (cur >= 3) {
+    line = above
+      ? `🔥 ${cur} wins on the bounce. Take down ${above.name} to grab #${myIdx}.`
+      : `🔥 ${cur} in a row and you're #1. Everyone's hunting you.`;
+    tone = "win";
+  } else if (won) {
+    line = above
+      ? `Nice win. Just ${gap} pts behind ${above.name} at #${myIdx + 1} — go get them.`
+      : `Nice win — and you're #1. Defend the crown. 👑`;
+    tone = "win";
+  } else if (margin === 2) {
+    line = `Lost by 2 last time — one rally away. Run it back. 🔁`;
+    tone = "loss";
+  } else if (cur <= -3) {
+    line = `${-cur}-game cold spell. Shake it off — the next one's yours.`;
+    tone = "loss";
+  } else {
+    line = above
+      ? `Tough one. Still only ${gap} pts behind ${above.name} — bounce back.`
+      : `Tough one, but you're still top of the pile. 👑`;
+    tone = "loss";
+  }
+  return c.json({ motivation: { line, tone } });
+});
+
+/** Group movers over the last 7 days: rank changes, most improved, power couple. */
+app.get("/api/groups/:gid/movers", async (c) => {
+  const db = c.env.DB;
+  const gid = c.get("groupId");
+  const [players, matchRows] = await Promise.all([
+    loadPlayers(db, gid),
+    loadMatches(db, gid),
+  ]);
+  const names = new Map(players.map((p) => [p.id, p]));
+  const cutoff = new Date(Date.now() - 7 * 86400000)
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+
+  const cur = replayMatches(matchRows.map(toMatchRecord));
+  const pastRows = matchRows.filter((m) => m.played_at < cutoff);
+  const prev = replayMatches(pastRows.map(toMatchRecord));
+
+  const rankOf = (rt: ReturnType<typeof replayMatches>) =>
+    players
+      .filter((p) => p.active && rt.ratings[p.id])
+      .map((p) => ({ id: p.id, rating: rt.ratings[p.id].rating }))
+      .sort((a, b) => b.rating - a.rating)
+      .map((x, i) => ({ id: x.id, rank: i + 1, rating: x.rating }));
+
+  const prevMap = new Map(rankOf(prev).map((x) => [x.id, x]));
+  const movers = rankOf(cur).map((x) => {
+    const p = prevMap.get(x.id);
+    return {
+      id: x.id,
+      name: names.get(x.id)?.name ?? "?",
+      emoji: names.get(x.id)?.emoji ?? "🏓",
+      rank: x.rank,
+      rankDelta: p ? p.rank - x.rank : 0,
+      ratingDelta: p ? Math.round(x.rating - p.rating) : 0,
+    };
+  });
+
+  const risers = movers
+    .filter((m) => m.rankDelta > 0)
+    .sort((a, b) => b.rankDelta - a.rankDelta)
+    .slice(0, 3);
+  const improvedSorted = movers
+    .slice()
+    .sort((a, b) => b.ratingDelta - a.ratingDelta);
+  const mostImproved =
+    improvedSorted[0] && improvedSorted[0].ratingDelta > 0
+      ? improvedSorted[0]
+      : null;
+
+  // power couple: best win-rate duo (min 2 games together)
+  const pairs = new Map<string, { a: number; b: number; games: number; wins: number }>();
+  for (const m of matchRows) {
+    for (const side of [
+      { x: m.a1, y: m.a2, won: m.score_a > m.score_b },
+      { x: m.b1, y: m.b2, won: m.score_b > m.score_a },
+    ]) {
+      const a = Math.min(side.x, side.y);
+      const b = Math.max(side.x, side.y);
+      const key = `${a}-${b}`;
+      const s = pairs.get(key) ?? { a, b, games: 0, wins: 0 };
+      s.games++;
+      if (side.won) s.wins++;
+      pairs.set(key, s);
+    }
+  }
+  let couple: { a: number; b: number; games: number; wins: number; rate: number } | null = null;
+  for (const s of pairs.values()) {
+    if (s.games < 2) continue;
+    const rate = s.wins / s.games;
+    if (!couple || rate > couple.rate || (rate === couple.rate && s.games > couple.games)) {
+      couple = { ...s, rate };
+    }
+  }
+  const powerCouple = couple
+    ? {
+        a: { name: names.get(couple.a)?.name ?? "?", emoji: names.get(couple.a)?.emoji ?? "🏓" },
+        b: { name: names.get(couple.b)?.name ?? "?", emoji: names.get(couple.b)?.emoji ?? "🏓" },
+        games: couple.games,
+        wins: couple.wins,
+        winRate: couple.rate,
+      }
+    : null;
+
+  return c.json({
+    risers,
+    mostImproved,
+    powerCouple,
+    playedThisWeek: pastRows.length < matchRows.length,
+  });
 });
 
 // ---------- SPA fallback for everything else ----------

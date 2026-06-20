@@ -177,6 +177,7 @@ export default function App() {
             id={profileId}
             version={version}
             isAdmin={currentGroup.role === "admin"}
+            advanced={me.user.advancedMode}
             onBack={() => setProfileId(null)}
             onChanged={() => {
               loadMe();
@@ -188,6 +189,7 @@ export default function App() {
           <Leaderboard
             version={version}
             meGroup={currentGroup}
+            advanced={me.user.advancedMode}
             onSelect={setProfileId}
             onAdd={() => setAddOpen(true)}
             onLog={() => openTab("log")}

@@ -54,15 +54,66 @@ export interface Profile extends Player {
   history: { matchId: number; playedAt: string; rating: number; delta: number }[];
   bestPartner: PartnerStat | null;
   nemesis: PartnerStat | null;
+  favouriteVictim: PartnerStat | null;
   biggestWin: { matchId: number; delta: number } | null;
   ownerUserId: number | null;
   invitedEmail: string | null;
+  // advanced (Phase 3)
+  currentStreak: number;
+  longestWinStreak: number;
+  longestLossStreak: number;
+  carryScore: number; // avg contribution %, >50 = carrier
+  clutch: { wins: number; losses: number };
+  picklesGiven: number;
+  picklesTaken: number;
+  teammates: Breakdown[];
+  opponents: Breakdown[];
+  badges: Badge[];
 }
 
 export interface PartnerStat extends Player {
   games: number;
   wins: number;
   winRate: number;
+}
+
+export interface Breakdown extends Player {
+  games: number;
+  wins: number;
+  losses: number;
+}
+
+export interface Badge {
+  key: string;
+  label: string;
+  emoji: string;
+}
+
+export interface Motivation {
+  line: string;
+  tone: "win" | "loss" | "neutral";
+}
+
+interface Mover {
+  id: number;
+  name: string;
+  emoji: string;
+  rank: number;
+  rankDelta: number;
+  ratingDelta: number;
+}
+
+export interface Movers {
+  risers: Mover[];
+  mostImproved: Mover | null;
+  powerCouple: {
+    a: { name: string; emoji: string };
+    b: { name: string; emoji: string };
+    games: number;
+    wins: number;
+    winRate: number;
+  } | null;
+  playedThisWeek: boolean;
 }
 
 export interface MeGroup {
@@ -204,6 +255,9 @@ export const api = {
       { method: "POST" },
     ),
   claims: () => req<{ claims: ClaimRequest[] }>(`/api/groups/${gid()}/claims`),
+  motivation: () =>
+    req<{ motivation: Motivation | null }>(`/api/groups/${gid()}/motivation`),
+  movers: () => req<Movers>(`/api/groups/${gid()}/movers`),
   approveClaim: (cid: number) =>
     req<{ approved: true }>(`/api/groups/${gid()}/claims/${cid}/approve`, {
       method: "POST",

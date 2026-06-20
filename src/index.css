@@ -2236,6 +2236,139 @@ input {
   padding: 10px;
 }
 
+/* ---------- Phase 3: advanced stats ---------- */
+
+.motiv-banner {
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+.motiv-banner.win {
+  background: var(--lime-soft);
+  color: var(--court-deep);
+}
+.motiv-banner.loss {
+  background: var(--coral-soft);
+  color: #a52a12;
+}
+.motiv-banner.neutral {
+  background: #fff;
+  color: var(--ink);
+}
+
+.movers-card {
+  border: var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: var(--shadow);
+  padding: 14px;
+  margin-top: 16px;
+}
+.movers-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--court-deep);
+  margin-bottom: 8px;
+}
+.mover-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1.5px solid var(--cream-dim);
+}
+.mover-row:first-of-type {
+  border-top: none;
+}
+.mv-emoji {
+  font-size: 18px;
+}
+.mv-name {
+  font-weight: 800;
+  font-size: 14px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mv-tag {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  background: var(--cream-dim);
+  border: 1.5px solid var(--ink);
+  border-radius: 99px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.mv-tag.up {
+  background: var(--lime);
+  color: var(--ink);
+}
+
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.badge {
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--gold);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  border-radius: 99px;
+  padding: 3px 10px;
+  box-shadow: 0 2px 0 var(--ink);
+}
+
+.bd-card {
+  border: var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: var(--shadow);
+  padding: 12px 14px;
+  margin-top: 12px;
+}
+.bd-card h4 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.bd-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-top: 1.5px solid var(--cream-dim);
+}
+.bd-row:first-of-type {
+  border-top: none;
+}
+.bd-emoji {
+  font-size: 18px;
+}
+.bd-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 14px;
+}
+.bd-rec {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--court-deep);
+}
+
 /* respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,

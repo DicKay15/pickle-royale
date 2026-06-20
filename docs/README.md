@@ -54,7 +54,10 @@ groups), and data never crosses between groups.
 - **v2** — Character pass (new mascot logo, masthead, witty touches). Shipped.
 - **v3 Phase 1** — Google login + private groups + per-group isolation. Shipped.
 - **v3 Phase 2** — Claiming + invites (auto-link, request/approve, admin inbox). Shipped.
-- **v3 Phase 3** — Advanced stats + motivation. Next.
+- **v3 Phase 3** — Advanced mode: stats, rivalries, badges, weekly movers, motivation. Shipped.
+
+**v3 is complete.** The app now has the full ranking experience, accounts, private
+groups, claiming/invites, and an opt-in advanced stats layer.
 
 See [ROADMAP.md](ROADMAP.md) for the detail.
 

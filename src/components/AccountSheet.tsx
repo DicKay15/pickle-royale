@@ -23,6 +23,25 @@ export default function AccountSheet({
   const [savingAdd, setSavingAdd] = useState(false);
   const [claims, setClaims] = useState<ClaimRequest[] | null>(null);
   const [resolving, setResolving] = useState<number | null>(null);
+  const [advanced, setAdvanced] = useState(me.user.advancedMode);
+  const [savingAdv, setSavingAdv] = useState(false);
+
+  const toggleAdvanced = async () => {
+    if (savingAdv) return;
+    const next = !advanced;
+    setAdvanced(next);
+    setSavingAdv(true);
+    try {
+      await api.setAdvanced(next);
+      onRefresh();
+      showToast(next ? "Advanced mode on 📊" : "Advanced mode off");
+    } catch (e) {
+      setAdvanced(!next);
+      showToast(e instanceof Error ? e.message : "Couldn't save");
+    } finally {
+      setSavingAdv(false);
+    }
+  };
 
   const isAdmin = current?.role === "admin";
 
@@ -189,6 +208,21 @@ export default function AccountSheet({
             </div>
           </>
         )}
+
+        <div className="acct-label">Advanced</div>
+        <button
+          className={`acct-toggle ${advanced ? "on" : ""}`}
+          onClick={toggleAdvanced}
+          role="switch"
+          aria-checked={advanced}
+        >
+          <span>Advanced mode 📊</span>
+          <span className="knob" />
+        </button>
+        <div className="acct-hint">
+          Unlocks personal stats, rivalries, badges, weekly movers, and a nudge
+          based on your last game.
+        </div>
 
         <button className="cta secondary acct-signout" onClick={signOut}>
           Sign out

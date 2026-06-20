@@ -67,10 +67,17 @@ function RatingChart({
   );
 }
 
+function streakLabel(s: number) {
+  if (s >= 1) return `🔥 ${s}W`;
+  if (s <= -1) return `🧊 ${-s}L`;
+  return "–";
+}
+
 export default function Profile({
   id,
   version,
   isAdmin,
+  advanced,
   onBack,
   onChanged,
   showToast,
@@ -78,6 +85,7 @@ export default function Profile({
   id: number;
   version: number;
   isAdmin: boolean;
+  advanced: boolean;
   onBack: () => void;
   onChanged: () => void;
   showToast: (m: string) => void;
@@ -201,6 +209,99 @@ export default function Profile({
           </div>
         </div>
       </div>
+
+      {advanced && (
+        <>
+          {p.badges.length > 0 && (
+            <div className="badge-row">
+              {p.badges.map((b) => (
+                <span key={b.key} className="badge">
+                  {b.emoji} {b.label}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="stat-grid">
+            <div className="stat-cell">
+              <div className="k">Current streak</div>
+              <div className="v">{streakLabel(p.currentStreak)}</div>
+            </div>
+            <div className="stat-cell">
+              <div className="k">Carry score</div>
+              <div className="v">
+                {p.carryScore}%
+                <span style={{ fontSize: 11, color: "var(--ink-soft)" }}>
+                  {p.carryScore >= 55
+                    ? "carrier"
+                    : p.carryScore <= 45
+                      ? "carried"
+                      : "balanced"}
+                </span>
+              </div>
+            </div>
+            <div className="stat-cell">
+              <div className="k">Clutch (by 2)</div>
+              <div className="v">
+                {p.clutch.wins}–{p.clutch.losses}
+              </div>
+            </div>
+            <div className="stat-cell">
+              <div className="k">Pickles</div>
+              <div className="v">
+                🥒 {p.picklesGiven} <span style={{ color: "var(--ink-soft)" }}>·</span>{" "}
+                😵 {p.picklesTaken}
+              </div>
+            </div>
+            <div className="stat-cell">
+              <div className="k">Favourite victim</div>
+              <div className="v">
+                {p.favouriteVictim ? (
+                  <>
+                    {p.favouriteVictim.emoji} {p.favouriteVictim.name}
+                  </>
+                ) : (
+                  <span style={{ color: "var(--ink-soft)" }}>TBD</span>
+                )}
+              </div>
+            </div>
+            <div className="stat-cell">
+              <div className="k">Longest win streak</div>
+              <div className="v">{p.longestWinStreak}</div>
+            </div>
+          </div>
+
+          {p.teammates.length > 0 && (
+            <div className="bd-card">
+              <h4>With teammates</h4>
+              {p.teammates.slice(0, 6).map((t) => (
+                <div key={t.id} className="bd-row">
+                  <span className="bd-emoji">{t.emoji}</span>
+                  <span className="bd-name">{t.name}</span>
+                  <span className="bd-rec">
+                    {t.wins}–{t.losses}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {p.opponents.length > 0 && (
+            <div className="bd-card">
+              <h4>Against opponents</h4>
+              {p.opponents.slice(0, 6).map((o) => (
+                <div key={o.id} className="bd-row">
+                  <span className="bd-emoji">{o.emoji}</span>
+                  <span className="bd-name">{o.name}</span>
+                  <span className="bd-rec">
+                    {o.wins}–{o.losses}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       {p.ownerUserId != null ? (
         <div className="claimed-note">✅ This player has been claimed</div>

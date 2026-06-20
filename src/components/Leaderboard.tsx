@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { api, type BoardEntry, type MeGroup } from "../api";
+import {
+  api,
+  type BoardEntry,
+  type MeGroup,
+  type Motivation,
+  type Movers,
+} from "../api";
 
 function Sparkline({ data }: { data: number[] }) {
   if (data.length < 2) return null;
@@ -77,6 +83,7 @@ const randomLine = () =>
 export default function Leaderboard({
   version,
   meGroup,
+  advanced,
   onSelect,
   onAdd,
   onLog,
@@ -84,6 +91,7 @@ export default function Leaderboard({
 }: {
   version: number;
   meGroup: MeGroup;
+  advanced: boolean;
   onSelect: (id: number) => void;
   onAdd: () => void;
   onLog: () => void;
@@ -93,6 +101,18 @@ export default function Leaderboard({
   const [totalMatches, setTotalMatches] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loadLine] = useState(randomLine);
+  const [motivation, setMotivation] = useState<Motivation | null>(null);
+  const [movers, setMovers] = useState<Movers | null>(null);
+
+  useEffect(() => {
+    if (!advanced) {
+      setMotivation(null);
+      setMovers(null);
+      return;
+    }
+    api.motivation().then((d) => setMotivation(d.motivation)).catch(() => {});
+    api.movers().then(setMovers).catch(() => {});
+  }, [advanced, version]);
 
   useEffect(() => {
     let alive = true;
@@ -152,6 +172,9 @@ export default function Leaderboard({
 
   return (
     <div className="page">
+      {advanced && motivation && (
+        <div className={`motiv-banner ${motivation.tone}`}>{motivation.line}</div>
+      )}
       {claimBanner}
       {hasGames && champ ? (
         <>
@@ -276,6 +299,46 @@ export default function Leaderboard({
           </button>
         </div>
       )}
+
+      {advanced &&
+        movers &&
+        (movers.risers.length > 0 || movers.mostImproved || movers.powerCouple) && (
+          <div className="movers-card">
+            <div className="movers-title">📈 This week</div>
+            {movers.mostImproved && (
+              <div className="mover-row">
+                <span className="mv-emoji">{movers.mostImproved.emoji}</span>
+                <span className="mv-name">{movers.mostImproved.name}</span>
+                <span className="mv-tag up">
+                  most improved +{movers.mostImproved.ratingDelta}
+                </span>
+              </div>
+            )}
+            {movers.risers.map((r) => (
+              <div key={r.id} className="mover-row">
+                <span className="mv-emoji">{r.emoji}</span>
+                <span className="mv-name">{r.name}</span>
+                <span className="mv-tag up">
+                  ↑{r.rankDelta} to #{r.rank}
+                </span>
+              </div>
+            ))}
+            {movers.powerCouple && (
+              <div className="mover-row">
+                <span className="mv-emoji">
+                  {movers.powerCouple.a.emoji}
+                  {movers.powerCouple.b.emoji}
+                </span>
+                <span className="mv-name">
+                  {movers.powerCouple.a.name} &amp; {movers.powerCouple.b.name}
+                </span>
+                <span className="mv-tag">
+                  power couple {movers.powerCouple.wins}/{movers.powerCouple.games}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
       <button
         className="cta secondary"
