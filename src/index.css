@@ -574,6 +574,12 @@ input {
   line-height: 1;
 }
 
+.nav-ico {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
 .tab-btn.active {
   background: rgba(201, 247, 58, 0.18);
   color: var(--lime);
@@ -1189,6 +1195,14 @@ input {
   padding: 12px 14px;
   margin-bottom: 10px;
   animation: page-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.h-card.tappable {
+  cursor: pointer;
+}
+.h-card.tappable:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--ink);
 }
 
 .h-top {
@@ -1840,8 +1854,10 @@ input {
 }
 
 .gb-caret {
-  font-size: 16px;
+  width: 18px;
+  height: 18px;
   color: var(--ink-soft);
+  flex: none;
 }
 
 /* generic centered sheet overlay (group picker overlay + account) */
@@ -2023,10 +2039,10 @@ input {
 }
 
 .acct-toggle .knob {
-  width: 44px;
-  height: 26px;
+  width: 46px;
+  height: 28px;
   border-radius: 99px;
-  border: var(--border);
+  border: 2px solid var(--ink);
   background: var(--cream-dim);
   position: relative;
   flex: none;
@@ -2036,13 +2052,14 @@ input {
 .acct-toggle .knob::after {
   content: "";
   position: absolute;
-  top: 2px;
-  left: 2px;
+  top: 50%;
+  left: 3px;
   width: 18px;
   height: 18px;
   border-radius: 50%;
   background: #fff;
   border: 2px solid var(--ink);
+  transform: translateY(-50%);
   transition: transform 0.15s;
 }
 
@@ -2051,7 +2068,7 @@ input {
 }
 
 .acct-toggle.on .knob::after {
-  transform: translateX(18px);
+  transform: translate(16px, -50%);
 }
 
 .acct-signout {
@@ -2275,6 +2292,14 @@ input {
   letter-spacing: 0.04em;
   color: var(--court-deep);
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ti-ico {
+  width: 18px;
+  height: 18px;
+  flex: none;
 }
 .mover-row {
   display: flex;
@@ -2435,6 +2460,13 @@ input {
 }
 .ach-emoji {
   font-size: 20px;
+  display: flex;
+  align-items: center;
+}
+.ach-ico {
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 .ach-label {
   font-weight: 800;
@@ -2561,6 +2593,64 @@ input {
   color: var(--ink-soft);
   text-align: center;
   margin-top: 8px;
+}
+
+/* ---------- v5: centered modal (actions + confirmations) ---------- */
+/* overlays are portalled to <body>, so they always sit above the tabbar */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(20, 42, 31, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fade-in 0.2s ease both;
+}
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  max-height: 88dvh;
+  overflow-y: auto;
+  background: var(--cream);
+  border: var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-lg);
+  padding: 20px 18px;
+  animation: pop-in 0.35s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.modal-head h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  text-transform: uppercase;
+  color: var(--court-deep);
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+.modal-actions .cta {
+  flex: 1;
+}
+.cta.danger {
+  background: var(--coral);
+  color: #fff;
+}
+
+/* keep bottom-sheet + centered-overlay above the tabbar too (belt + braces) */
+.sheet-backdrop,
+.sheet-overlay {
+  z-index: 100;
 }
 
 /* respect reduced motion */

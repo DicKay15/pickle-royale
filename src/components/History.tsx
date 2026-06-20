@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, type MatchEntry, type MatchPlayer } from "../api";
+import { ConfirmModal } from "./Modal";
 
 function fmtDate(iso: string) {
   const d = new Date(iso.replace(" ", "T") + "Z");
@@ -46,15 +47,18 @@ function SidePlayers({
 
 export default function History({
   version,
+  isAdmin,
   onChanged,
   showToast,
 }: {
   version: number;
+  isAdmin: boolean;
   onChanged: () => void;
   showToast: (msg: string) => void;
 }) {
   const [matches, setMatches] = useState<MatchEntry[] | null>(null);
-  const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [confirm, setConfirm] = useState<MatchEntry | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     api
@@ -63,14 +67,18 @@ export default function History({
       .catch(() => showToast("Couldn't load match history"));
   }, [version, showToast]);
 
-  const del = async (id: number) => {
+  const del = async () => {
+    if (!confirm || busy) return;
+    setBusy(true);
     try {
-      await api.deleteMatch(id);
-      setConfirmId(null);
+      await api.deleteMatch(confirm.id);
       showToast("Match deleted — ratings recalculated");
+      setConfirm(null);
       onChanged();
     } catch (e) {
       showToast(e instanceof Error ? e.message : "Couldn't delete");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -97,34 +105,12 @@ export default function History({
         matches.map((m, i) => (
           <article
             key={m.id}
-            className="h-card"
+            className={`h-card ${isAdmin ? "tappable" : ""}`}
             style={{ animationDelay: `${Math.min(i, 6) * 0.05}s` }}
+            onClick={isAdmin ? () => setConfirm(m) : undefined}
           >
             <div className="h-top">
               <span>{fmtDate(m.playedAt)}</span>
-              {confirmId === m.id ? (
-                <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <span style={{ color: "var(--coral)" }}>Delete?</span>
-                  <button
-                    className="h-del"
-                    style={{ color: "var(--coral)", fontWeight: 800 }}
-                    onClick={() => del(m.id)}
-                  >
-                    Yes
-                  </button>
-                  <button className="h-del" onClick={() => setConfirmId(null)}>
-                    No
-                  </button>
-                </span>
-              ) : (
-                <button
-                  className="h-del"
-                  aria-label="Delete match"
-                  onClick={() => setConfirmId(m.id)}
-                >
-                  ✕
-                </button>
-              )}
             </div>
             <div className="h-teams">
               <SidePlayers players={m.teamA} />
@@ -141,6 +127,18 @@ export default function History({
             </div>
           </article>
         ))
+      )}
+
+      {confirm && (
+        <ConfirmModal
+          title="Delete this match?"
+          danger
+          busy={busy}
+          confirmLabel="Delete"
+          body={`This removes the ${confirm.scoreA}–${confirm.scoreB} result and recalculates everyone's ratings. This can't be undone.`}
+          onConfirm={del}
+          onClose={() => setConfirm(null)}
+        />
       )}
     </div>
   );

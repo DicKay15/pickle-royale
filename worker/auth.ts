@@ -9,6 +9,9 @@ export type Env = {
   GOOGLE_CLIENT_SECRET?: string;
   SESSION_SECRET?: string;
   DEV_AUTH?: string; // "1" enables /auth/dev for local testing only
+  RESEND_API_KEY?: string; // set to enable sending invite emails
+  RESEND_FROM?: string; // e.g. "Pickle Royale <onboarding@resend.dev>"
+  BACKUPS?: R2Bucket; // weekly DB exports
 };
 
 // Helpers accept any Hono context shape (routes elsewhere add Variables).

@@ -34,13 +34,29 @@ export default function Profile({
     setInviting(true);
     try {
       const res = await api.invitePlayer(id, email);
-      showToast(res.linked ? "Linked! They're in. 🎉" : "Invite saved ✉️");
+      showToast(
+        res.linked
+          ? "Linked! They're in. 🎉"
+          : res.sent
+            ? `Invite emailed to ${email} ✉️`
+            : "Email saved — they'll auto-link when they sign in.",
+      );
       setInviteEmail("");
       onChanged();
     } catch (e) {
       showToast(e instanceof Error ? e.message : "Couldn't invite");
     } finally {
       setInviting(false);
+    }
+  };
+
+  const copyInviteLink = async () => {
+    try {
+      const { url } = await api.inviteLink(id);
+      await navigator.clipboard.writeText(url);
+      showToast("Invite link copied — share it in WhatsApp 📋");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Couldn't make a link");
     }
   };
 
@@ -84,8 +100,8 @@ export default function Profile({
           <div className="invite-card">
             <h4>Invite {p.name} to claim this profile</h4>
             <p>
-              Attach their email and they'll get this player (with all its history)
-              automatically when they sign in.
+              Email them the invite, or copy a link to share in WhatsApp. They'll
+              get this player (with all its history) when they sign in.
             </p>
             <div className="invite-row">
               <input
@@ -99,9 +115,16 @@ export default function Profile({
                 onKeyDown={(e) => e.key === "Enter" && invite()}
               />
               <button className="cta" disabled={inviting} onClick={invite}>
-                {inviting ? "…" : "Invite"}
+                {inviting ? "…" : "Email"}
               </button>
             </div>
+            <button
+              className="cta secondary"
+              style={{ marginTop: 8 }}
+              onClick={copyInviteLink}
+            >
+              🔗 Copy invite link
+            </button>
             {p.invitedEmail && (
               <div className="field-hint">Currently invited: {p.invitedEmail}</div>
             )}

@@ -7,6 +7,7 @@ import {
   type Movers,
 } from "../api";
 import Avatar from "./Avatar";
+import { TrendingIcon } from "./icons";
 
 function Sparkline({ data }: { data: number[] }) {
   if (data.length < 2) return null;
@@ -309,7 +310,9 @@ export default function Leaderboard({
         movers &&
         (movers.risers.length > 0 || movers.mostImproved || movers.powerCouple) && (
           <div className="movers-card">
-            <div className="movers-title">📈 This week</div>
+            <div className="movers-title">
+              <TrendingIcon className="ti-ico" /> This week
+            </div>
             {movers.mostImproved && (
               <div className="mover-row">
                 <span className="mv-emoji">{movers.mostImproved.emoji}</span>

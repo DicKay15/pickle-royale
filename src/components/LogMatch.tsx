@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { api, type BoardEntry, type LogResult } from "../api";
 
 type Side = "A" | "B" | null;
@@ -133,10 +134,10 @@ function Stepper({
           key={p}
           type="button"
           className="preset"
-          aria-label={`Set ${label} to ${p}`}
-          onClick={() => onChange(p)}
+          aria-label={`Add ${p} to ${label}`}
+          onClick={() => onChange(Math.min(99, value + p))}
         >
-          {p}
+          +{p}
         </button>
       ))}
     </div>
@@ -220,7 +221,7 @@ function Reveal({
     cardRef.current?.focus();
   }, []);
 
-  return (
+  return createPortal(
     <div
       className="reveal"
       role="dialog"
@@ -266,7 +267,8 @@ function Reveal({
           Back to standings
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -287,7 +289,7 @@ export default function LogMatch({
 }) {
   const [players, setPlayers] = useState<BoardEntry[] | null>(null);
   const [sides, setSides] = useState<Record<number, Side>>({});
-  const [scoreA, setScoreA] = useState(11);
+  const [scoreA, setScoreA] = useState(0);
   const [scoreB, setScoreB] = useState(0);
   const [carryA, setCarryA] = useState(50);
   const [carryB, setCarryB] = useState(50);
@@ -371,7 +373,7 @@ export default function LogMatch({
 
   const reset = () => {
     setSides({});
-    setScoreA(11);
+    setScoreA(0);
     setScoreB(0);
     setCarryA(50);
     setCarryB(50);
@@ -474,12 +476,12 @@ export default function LogMatch({
         <div className="score-col a">
           <div className="who">Green</div>
           <div className="score-big a" aria-live="polite">{scoreA}</div>
-          <Stepper value={scoreA} onChange={setScoreA} label="Team Green score" presets={[11, 15]} hideVal />
+          <Stepper value={scoreA} onChange={setScoreA} label="Team Green score" presets={[5, 11]} hideVal />
         </div>
         <div className="score-col b">
           <div className="who">Orange</div>
           <div className="score-big b" aria-live="polite">{scoreB}</div>
-          <Stepper value={scoreB} onChange={setScoreB} label="Team Orange score" presets={[11, 15]} hideVal />
+          <Stepper value={scoreB} onChange={setScoreB} label="Team Orange score" presets={[5, 11]} hideVal />
         </div>
       </div>
 

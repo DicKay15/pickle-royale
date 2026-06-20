@@ -49,6 +49,29 @@ pnpm run db:remote    # apply migrations to the REMOTE/production database
 Note: `db:remote` runs against live data. The current schema starts each group
 empty (no seeded players); the admin adds players in-app.
 
+**Migrations are additive-only.** The one-time DROP/rebuild at the v3 groups launch
+was intentional (the data was test-only). Now that real matches are logged, never
+ship a destructive migration again: only `ALTER TABLE ... ADD COLUMN` / `CREATE
+TABLE` / new indexes.
+
+---
+
+## Backups & data safety
+
+Two layers protect the data:
+
+1. **Cloudflare D1 Time Travel (built-in):** automatic point-in-time recovery for
+   ~30 days. Restore with `wrangler d1 time-travel restore pickle-royale
+   --timestamp=<ISO>` (or `--bookmark=`). List points with `wrangler d1 time-travel
+   info pickle-royale`. No setup, always on.
+2. **Weekly export to R2 (ours):** a cron-triggered Worker handler dumps every table
+   to a timestamped JSON file in the `pickle-royale-backups` R2 bucket (Mondays
+   06:00 UTC; see `triggers.crons` + the `BACKUPS` binding in `wrangler.jsonc`, and
+   `runBackup()` in `worker/index.ts`). Browse/download with
+   `wrangler r2 object get pickle-royale-backups/<file>` or `wrangler r2 bucket ...`.
+   Trigger a backup manually in local dev with
+   `curl "http://localhost:8787/__scheduled?cron=0+6+*+*+1"` while `wrangler dev` runs.
+
 ---
 
 ## Test and build
@@ -82,7 +105,10 @@ Stored as Cloudflare Worker secrets, never in code:
 
 - `GOOGLE_CLIENT_ID` — the Google OAuth client id.
 - `GOOGLE_CLIENT_SECRET` — the Google OAuth client secret.
-- `SESSION_SECRET` — random string used to sign session cookies.
+- `SESSION_SECRET` — random string used to sign session cookies (also signs invite links).
+- `RESEND_API_KEY` — optional; set to send invite emails (without it, copy-link
+  invites still work). `RESEND_FROM` — optional sender, e.g.
+  `"Pickle Royale <onboarding@resend.dev>"`.
 
 Set or rotate one with:
 

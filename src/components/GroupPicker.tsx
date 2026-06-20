@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { api, type MeGroup } from "../api";
 
 export default function GroupPicker({
@@ -111,5 +112,5 @@ export default function GroupPicker({
   );
 
   if (firstRun) return <div className="auth-screen">{body}</div>;
-  return <div className="sheet-overlay">{body}</div>;
+  return createPortal(<div className="sheet-overlay">{body}</div>, document.body);
 }

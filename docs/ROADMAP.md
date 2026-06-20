@@ -81,6 +81,23 @@ status at the last update.
 
 ---
 
+### v5 — Post-launch polish, invites & backups
+- [x] Sheet/modal convention: info = bottom sheet, actions = centered modal; all
+      overlays portalled to body so they sit above the navbar (fixes the z-index bug)
+- [x] Rumbles: tap a match → delete confirmation **modal** (admins only); cleaner date
+- [x] Log Match: scores default to 0/0; `+5` / `+11` increment buttons
+- [x] Stat headers → "You and" / "You vs"
+- [x] Custom SVG icons (nav, "This week" movers, achievements) replacing emoji
+- [x] Toggle knob + group-bar chevron alignment fixed
+- [x] **Invites:** per-player copy-link + real email (Resend) + a "Join & claim"
+      accept modal that survives the Google sign-in redirect
+- [x] **Weekly automated backup** to R2 (cron) + additive-only migration policy
+- [ ] Email send goes live once the `RESEND_API_KEY` secret is set (copy-link works now)
+
+**v5 is complete** (email pending the Resend key). 🎉
+
+---
+
 ## In progress / next
 
 Nothing committed right now — see Parked ideas below for candidates.

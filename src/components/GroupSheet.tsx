@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { type Me } from "../api";
 
 /** Slim group switcher: switch groups + copy the invite code. Nothing else. */
@@ -28,7 +29,7 @@ export default function GroupSheet({
     }
   };
 
-  return (
+  return createPortal(
     <div className="sheet-overlay" onClick={onClose}>
       <div className="acct-card" onClick={(e) => e.stopPropagation()}>
         <button className="sheet-x" onClick={onClose} aria-label="Close">
@@ -70,6 +71,7 @@ export default function GroupSheet({
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

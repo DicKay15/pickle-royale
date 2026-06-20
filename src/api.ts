@@ -264,10 +264,23 @@ export const api = {
 
   // claiming + invites (Phase 2)
   invitePlayer: (playerId: number, email: string) =>
-    req<{ linked?: boolean; invited?: boolean }>(
+    req<{ linked?: boolean; invited?: boolean; sent?: boolean }>(
       `/api/groups/${gid()}/players/${playerId}/invite`,
       { method: "POST", body: JSON.stringify({ email }) },
     ),
+  inviteLink: (playerId: number) =>
+    req<{ url: string }>(`/api/groups/${gid()}/players/${playerId}/invite-link`, {
+      method: "POST",
+    }),
+  inviteInfo: (token: string) =>
+    req<{ groupName: string; playerName: string; alreadyClaimed: boolean }>(
+      `/api/invite?token=${encodeURIComponent(token)}`,
+    ),
+  acceptInvite: (token: string) =>
+    req<{ ok: true; gid: number }>(`/api/invite/accept`, {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
   claimPlayer: (playerId: number) =>
     req<{ linked?: boolean; requested?: boolean }>(
       `/api/groups/${gid()}/players/${playerId}/claim`,

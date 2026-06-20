@@ -1,4 +1,5 @@
 import { Hono, type MiddlewareHandler } from "hono";
+import { sign, verify } from "hono/jwt";
 import { auth, currentUser, type Env, type SessionUser } from "./auth";
 import {
   replayMatches,
@@ -151,6 +152,87 @@ function genCode(): string {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("")
     .toUpperCase();
+}
+
+function sessionSecret(env: Env): string {
+  return env.SESSION_SECRET || "dev-insecure-secret-change-me";
+}
+
+interface InvitePayload {
+  gid: number;
+  pid: number;
+  t: "invite";
+  exp: number;
+}
+
+async function makeInviteToken(env: Env, gid: number, pid: number): Promise<string> {
+  const exp = Math.floor(Date.now() / 1000) + 30 * 86400;
+  return sign({ gid, pid, t: "invite", exp }, sessionSecret(env), "HS256");
+}
+
+/** Send an invite email via Resend, if configured. Returns whether it sent. */
+async function sendInviteEmail(
+  env: Env,
+  to: string,
+  groupName: string,
+  playerName: string,
+  url: string,
+): Promise<boolean> {
+  if (!env.RESEND_API_KEY) return false;
+  const from = env.RESEND_FROM || "Pickle Royale <onboarding@resend.dev>";
+  const html = `
+    <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto">
+      <h2 style="color:#14604a">🥒 You're invited to ${groupName} on Pickle Royale</h2>
+      <p>You've been added as <b>${playerName}</b>. Tap below to join the group and
+      claim your player (with all your match history).</p>
+      <p><a href="${url}" style="display:inline-block;background:#c9f73a;color:#142a1f;
+      font-weight:800;padding:12px 20px;border-radius:12px;text-decoration:none">
+      Join & claim ${playerName}</a></p>
+      <p style="color:#3c5247;font-size:13px">Or paste this link: ${url}</p>
+    </div>`;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to,
+        subject: `Join ${groupName} on Pickle Royale 🏓`,
+        html,
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Weekly export: dump every table to a timestamped JSON file in R2. */
+async function runBackup(env: Env): Promise<void> {
+  if (!env.BACKUPS) return;
+  const tables = [
+    "users",
+    "groups",
+    "group_members",
+    "players",
+    "matches",
+    "rating_events",
+    "claim_requests",
+  ];
+  const dump: Record<string, unknown[]> = {};
+  for (const t of tables) {
+    const { results } = await env.DB.prepare(`SELECT * FROM ${t}`).all();
+    dump[t] = results;
+  }
+  const key = `backup-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.json`;
+  await env.BACKUPS.put(
+    key,
+    JSON.stringify({ at: new Date().toISOString(), tables: dump }),
+    { httpMetadata: { contentType: "application/json" } },
+  );
 }
 
 // ---------- account routes ----------
@@ -338,6 +420,79 @@ app.post("/api/groups/join", requireUser, async (c) => {
 });
 
 // ---------- group-scoped routes ----------
+
+// ---------- invite accept (token-based; user may not be a member yet) ----------
+
+app.get("/api/invite", requireUser, async (c) => {
+  const token = c.req.query("token") || "";
+  let payload: InvitePayload;
+  try {
+    payload = (await verify(token, sessionSecret(c.env), "HS256")) as unknown as InvitePayload;
+  } catch {
+    return c.json({ error: "This invite link is invalid or expired" }, 400);
+  }
+  if (payload.t !== "invite") return c.json({ error: "Invalid invite" }, 400);
+  const row = await c.env.DB.prepare(
+    `SELECT g.name AS group_name, p.name AS player_name, p.owner_user_id
+     FROM groups g JOIN players p ON p.group_id = g.id
+     WHERE g.id = ? AND p.id = ?`,
+  )
+    .bind(payload.gid, payload.pid)
+    .first<{ group_name: string; player_name: string; owner_user_id: number | null }>();
+  if (!row) return c.json({ error: "That invite no longer exists" }, 404);
+  return c.json({
+    groupName: row.group_name,
+    playerName: row.player_name,
+    alreadyClaimed: !!row.owner_user_id,
+  });
+});
+
+app.post("/api/invite/accept", requireUser, async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as { token?: string };
+  let payload: InvitePayload;
+  try {
+    payload = (await verify(
+      body.token || "",
+      sessionSecret(c.env),
+      "HS256",
+    )) as unknown as InvitePayload;
+  } catch {
+    return c.json({ error: "This invite link is invalid or expired" }, 400);
+  }
+  if (payload.t !== "invite") return c.json({ error: "Invalid invite" }, 400);
+  const user = c.get("user");
+  const { gid, pid } = payload;
+
+  const player = await c.env.DB.prepare(
+    "SELECT owner_user_id FROM players WHERE id = ? AND group_id = ?",
+  )
+    .bind(pid, gid)
+    .first<{ owner_user_id: number | null }>();
+  if (!player) return c.json({ error: "That player no longer exists" }, 404);
+  if (player.owner_user_id) {
+    if (player.owner_user_id === user.id) return c.json({ ok: true, gid });
+    return c.json({ error: "That player has already been claimed" }, 409);
+  }
+  const owns = await c.env.DB.prepare(
+    "SELECT 1 FROM players WHERE group_id = ? AND owner_user_id = ?",
+  )
+    .bind(gid, user.id)
+    .first();
+  if (owns) return c.json({ error: "You already own a player in this group" }, 409);
+
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      "UPDATE players SET owner_user_id = ? WHERE id = ? AND owner_user_id IS NULL",
+    ).bind(user.id, pid),
+    c.env.DB.prepare(
+      "INSERT OR IGNORE INTO group_members (group_id, user_id, role, can_add_players) VALUES (?, ?, 'member', 0)",
+    ).bind(gid, user.id),
+    c.env.DB.prepare(
+      "UPDATE claim_requests SET status='approved', resolved_at=datetime('now') WHERE player_id = ? AND status='pending'",
+    ).bind(pid),
+  ]);
+  return c.json({ ok: true, gid });
+});
 
 app.use("/api/groups/:gid/*", groupGuard);
 
@@ -933,7 +1088,43 @@ app.post("/api/groups/:gid/players/:id/invite", async (c) => {
   await c.env.DB.prepare("UPDATE players SET invited_email = ? WHERE id = ?")
     .bind(email, pid)
     .run();
-  return c.json({ invited: true });
+
+  // email the invite link if Resend is configured
+  const meta = await c.env.DB.prepare(
+    "SELECT g.name AS group_name, p.name AS player_name FROM groups g, players p WHERE g.id = ? AND p.id = ?",
+  )
+    .bind(gid, pid)
+    .first<{ group_name: string; player_name: string }>();
+  const token = await makeInviteToken(c.env, gid, pid);
+  const origin = new URL(c.req.url).origin;
+  const sent = await sendInviteEmail(
+    c.env,
+    email,
+    meta?.group_name ?? "your group",
+    meta?.player_name ?? "your player",
+    `${origin}/?invite=${token}`,
+  );
+  return c.json({ invited: true, sent });
+});
+
+/** Generate a shareable invite link for a player (admin / adder). */
+app.post("/api/groups/:gid/players/:id/invite-link", async (c) => {
+  const gid = c.get("groupId");
+  const user = c.get("user");
+  const pid = Number(c.req.param("id"));
+  const player = await c.env.DB.prepare(
+    "SELECT owner_user_id, added_by_user_id FROM players WHERE id = ? AND group_id = ?",
+  )
+    .bind(pid, gid)
+    .first<{ owner_user_id: number | null; added_by_user_id: number | null }>();
+  if (!player) return c.json({ error: "Player not found" }, 404);
+  if (player.owner_user_id) return c.json({ error: "That player is already claimed" }, 409);
+  if (c.get("role") !== "admin" && player.added_by_user_id !== user.id) {
+    return c.json({ error: "Only an admin or whoever added this player can invite" }, 403);
+  }
+  const token = await makeInviteToken(c.env, gid, pid);
+  const origin = new URL(c.req.url).origin;
+  return c.json({ url: `${origin}/?invite=${token}` });
 });
 
 /** A signed-in user asks to own a player (auto-linked if pre-invited). */
@@ -1290,4 +1481,10 @@ app.get("*", (c) => {
 
 app.notFound((c) => c.json({ error: "Not found" }, 404));
 
-export default app;
+export default {
+  fetch: (request: Request, env: Env, ctx: ExecutionContext) =>
+    app.fetch(request, env, ctx),
+  scheduled: (_event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+    ctx.waitUntil(runBackup(env));
+  },
+};

@@ -20,6 +20,17 @@
       "database_id": "46173fbc-cb86-4b50-8a56-1fb094db6b2a"
     }
   ],
+  // Weekly automated DB export (in addition to Cloudflare's built-in
+  // 30-day point-in-time recovery). Runs Mondays 06:00 UTC.
+  "r2_buckets": [
+    {
+      "binding": "BACKUPS",
+      "bucket_name": "pickle-royale-backups"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 6 * * 1"]
+  },
   // Custom domain pickleball.dhrumilkherde.com is attached via the
   // Cloudflare API at deploy time — keeping `routes` here breaks
   // local asset serving in `wrangler dev` (root path 404s).

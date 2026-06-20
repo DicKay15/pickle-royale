@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import type { Info } from "../statInfo";
 
 /** Tap-to-learn bottom sheet explaining a single stat or badge. */
@@ -9,7 +10,7 @@ export default function InfoSheet({
   onClose: () => void;
 }) {
   if (!info) return null;
-  return (
+  return createPortal(
     <div
       className="sheet-backdrop"
       onClick={(e) => e.target === e.currentTarget && onClose()}
@@ -21,6 +22,7 @@ export default function InfoSheet({
           Got it
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

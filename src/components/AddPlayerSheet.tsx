@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "../api";
+import Modal from "./Modal";
 
 const EMOJIS = [
   "🏓", "🦖", "🐙", "🦅", "🐯", "🦊", "🐼", "🐸",
@@ -37,13 +38,7 @@ export default function AddPlayerSheet({
   };
 
   return (
-    <div
-      className="sheet-backdrop"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="sheet" role="dialog" aria-modal="true" aria-label="Add player">
-        <h3>New Challenger 🥊</h3>
-
+    <Modal title="New Challenger 🥊" onClose={onClose}>
         {error && <div className="form-error">{error}</div>}
 
         <div className="field">
@@ -97,14 +92,6 @@ export default function AddPlayerSheet({
         <button className="cta" disabled={busy} onClick={submit}>
           {busy ? "Adding…" : "Enter the Royale"}
         </button>
-        <button
-          className="cta secondary"
-          style={{ marginTop: 8, boxShadow: "none", border: "none" }}
-          onClick={onClose}
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
+    </Modal>
   );
 }

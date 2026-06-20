@@ -59,12 +59,12 @@ export const STAT_INFO: Record<string, Info> = {
     body: "The opponent you beat most often. You currently have a winning record against them.",
   },
   teammates: {
-    title: "With teammates",
-    body: "Your win - loss record paired with each person you've played alongside.",
+    title: "You and",
+    body: "Your win - loss record paired with each teammate you've played alongside.",
   },
   opponents: {
-    title: "Against opponents",
-    body: "Your win - loss record facing each person across the net.",
+    title: "You vs",
+    body: "Your win - loss record facing each opponent across the net.",
   },
   ratingJourney: {
     title: "Rating journey",

@@ -11,6 +11,14 @@ import GroupSheet from "./components/GroupSheet";
 import StatsTab from "./components/StatsTab";
 import ProfileTab from "./components/ProfileTab";
 import ClaimSheet from "./components/ClaimSheet";
+import { ConfirmModal } from "./components/Modal";
+import {
+  TrophyIcon,
+  PaddlesIcon,
+  StatsIcon,
+  PersonIcon,
+  ChevronDownIcon,
+} from "./components/icons";
 
 export type Tab = "board" | "log" | "history" | "stats" | "profile";
 
@@ -34,6 +42,7 @@ const reduceMotion =
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const GROUP_KEY = "pr_group";
+const INVITE_KEY = "pr_invite";
 
 export default function App() {
   const [me, setMe] = useState<Me | null | undefined>(undefined);
@@ -41,6 +50,12 @@ export default function App() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
+  const [pendingInvite, setPendingInvite] = useState<{
+    token: string;
+    groupName: string;
+    playerName: string;
+  } | null>(null);
+  const [acceptingInvite, setAcceptingInvite] = useState(false);
 
   const [tab, setTab] = useState<Tab>("board");
   const [profileId, setProfileId] = useState<number | null>(null);
@@ -73,6 +88,55 @@ export default function App() {
   useEffect(() => {
     loadMe().catch(() => setMe(null));
   }, [loadMe]);
+
+  // capture an ?invite=<token> from the URL (survives the Google sign-in redirect)
+  useEffect(() => {
+    const u = new URL(window.location.href);
+    const t = u.searchParams.get("invite");
+    if (t) {
+      localStorage.setItem(INVITE_KEY, t);
+      u.searchParams.delete("invite");
+      window.history.replaceState({}, "", u.pathname + u.search + u.hash);
+    }
+  }, []);
+
+  // once signed in, surface a pending invite as a confirm modal
+  useEffect(() => {
+    if (!me || pendingInvite) return;
+    const t = localStorage.getItem(INVITE_KEY);
+    if (!t) return;
+    api
+      .inviteInfo(t)
+      .then((info) =>
+        setPendingInvite({
+          token: t,
+          groupName: info.groupName,
+          playerName: info.playerName,
+        }),
+      )
+      .catch(() => localStorage.removeItem(INVITE_KEY));
+  }, [me, pendingInvite]);
+
+  const acceptInvite = async () => {
+    if (!pendingInvite || acceptingInvite) return;
+    setAcceptingInvite(true);
+    try {
+      const res = await api.acceptInvite(pendingInvite.token);
+      localStorage.removeItem(INVITE_KEY);
+      showToast(`You're in — claimed ${pendingInvite.playerName}! 🎉`);
+      setPendingInvite(null);
+      await loadMe();
+      switchGroup(res.gid);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Couldn't accept invite");
+    } finally {
+      setAcceptingInvite(false);
+    }
+  };
+  const dismissInvite = () => {
+    localStorage.removeItem(INVITE_KEY);
+    setPendingInvite(null);
+  };
 
   // rotating tagline
   const [tagIdx, setTagIdx] = useState(() =>
@@ -122,6 +186,17 @@ export default function App() {
     switchGroup(gid);
   };
 
+  const inviteModal = pendingInvite ? (
+    <ConfirmModal
+      title={`Join ${pendingInvite.groupName}?`}
+      body={`You'll join "${pendingInvite.groupName}" and claim the player ${pendingInvite.playerName}, with all their match history.`}
+      confirmLabel="Join & claim"
+      busy={acceptingInvite}
+      onConfirm={acceptInvite}
+      onClose={dismissInvite}
+    />
+  ) : null;
+
   // ---- gates ----
   if (me === undefined) {
     return (
@@ -134,11 +209,14 @@ export default function App() {
   if (me === null) return <Login />;
   if (me.groups.length === 0) {
     return (
-      <GroupPicker
-        firstRun
-        onPicked={(g) => onPickedGroup(g.id)}
-        showToast={showToast}
-      />
+      <>
+        <GroupPicker
+          firstRun
+          onPicked={(g) => onPickedGroup(g.id)}
+          showToast={showToast}
+        />
+        {inviteModal}
+      </>
     );
   }
 
@@ -170,7 +248,7 @@ export default function App() {
       <button className="group-bar" onClick={() => setGroupOpen(true)}>
         <span className="gb-name">👥 {currentGroup.name}</span>
         <span className="gb-code">#{currentGroup.code}</span>
-        <span className="gb-caret">⌄</span>
+        <ChevronDownIcon className="gb-caret" />
       </button>
 
       <main>
@@ -221,7 +299,12 @@ export default function App() {
             showToast={showToast}
           />
         ) : (
-          <History version={version} onChanged={refresh} showToast={showToast} />
+          <History
+            version={version}
+            isAdmin={currentGroup.role === "admin"}
+            onChanged={refresh}
+            showToast={showToast}
+          />
         )}
       </main>
 
@@ -232,7 +315,7 @@ export default function App() {
             onClick={() => openTab("board")}
             aria-label="Standings"
           >
-            <span className="ico">🏆</span>
+            <TrophyIcon className="nav-ico" />
             Standings
           </button>
           <button
@@ -240,7 +323,7 @@ export default function App() {
             onClick={() => openTab("history")}
             aria-label="Match history"
           >
-            <span className="ico">📜</span>
+            <PaddlesIcon className="nav-ico" />
             Rumbles
           </button>
           <button
@@ -255,7 +338,7 @@ export default function App() {
             onClick={() => openTab("stats")}
             aria-label="Your stats"
           >
-            <span className="ico">📊</span>
+            <StatsIcon className="nav-ico" />
             Stats
           </button>
           <button
@@ -263,7 +346,7 @@ export default function App() {
             onClick={() => openTab("profile")}
             aria-label="Your profile"
           >
-            <span className="ico">👤</span>
+            <PersonIcon className="nav-ico" />
             Profile
           </button>
         </div>
@@ -312,6 +395,8 @@ export default function App() {
           showToast={showToast}
         />
       )}
+
+      {inviteModal}
 
       {toast && <div className="toast">{toast}</div>}
     </div>

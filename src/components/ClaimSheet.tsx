@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { api, type BoardEntry } from "../api";
 
 export default function ClaimSheet({
@@ -35,7 +36,7 @@ export default function ClaimSheet({
     }
   };
 
-  return (
+  return createPortal(
     <div className="sheet-overlay" onClick={onClose}>
       <div className="acct-card" onClick={(e) => e.stopPropagation()}>
         <button className="sheet-x" onClick={onClose} aria-label="Close">
@@ -77,6 +78,7 @@ export default function ClaimSheet({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -4,6 +4,7 @@ import Avatar from "./Avatar";
 import InfoSheet from "./InfoSheet";
 import { STAT_INFO, type Info } from "../statInfo";
 import { ACHIEVEMENTS } from "../achievements";
+import { ACH_ICONS, LockIcon } from "./icons";
 
 /* ---------- rating journey: hold + drag to scrub ---------- */
 
@@ -254,7 +255,7 @@ export function StatsSections({ p }: { p: ProfileData }) {
       {p.teammates.length > 0 && (
         <>
           <button className="section-head" onClick={() => setInfo(STAT_INFO.teammates)}>
-            With teammates <span className="info-dot">ⓘ</span>
+            You and <span className="info-dot">ⓘ</span>
           </button>
           <div className="bd-card">
             {p.teammates.slice(0, 6).map((t) => (
@@ -273,7 +274,7 @@ export function StatsSections({ p }: { p: ProfileData }) {
       {p.opponents.length > 0 && (
         <>
           <button className="section-head" onClick={() => setInfo(STAT_INFO.opponents)}>
-            Against opponents <span className="info-dot">ⓘ</span>
+            You vs <span className="info-dot">ⓘ</span>
           </button>
           <div className="bd-card">
             {p.opponents.slice(0, 6).map((o) => (
@@ -312,6 +313,7 @@ export function AchievementsGrid({
           const earned = badges.some((b) => b.key === a.key);
           const c = counts[a.key] ?? 0;
           const showMult = !!a.countable && c > 1;
+          const Icon = ACH_ICONS[a.key];
           return (
             <button
               key={a.key}
@@ -325,7 +327,13 @@ export function AchievementsGrid({
                 })
               }
             >
-              <span className="ach-emoji">{earned ? a.emoji : "🔒"}</span>
+              <span className="ach-emoji">
+                {earned && Icon ? (
+                  <Icon className="ach-ico" />
+                ) : (
+                  <LockIcon className="ach-ico" />
+                )}
+              </span>
               <span className="ach-label">
                 {a.label}
                 {showMult && <span className="ach-mult">×{c}</span>}
