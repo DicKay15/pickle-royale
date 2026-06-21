@@ -331,8 +331,7 @@ export default function App() {
             onClick={() => openTab("log")}
             aria-label="Log a match"
           >
-            <img className="tab-log-mascot" src="/favicon.svg" alt="" />
-            <span className="tab-log-plus" aria-hidden="true">+</span>
+            +
           </button>
           <button
             className={`tab-btn ${tab === "stats" && profileId === null ? "active" : ""}`}

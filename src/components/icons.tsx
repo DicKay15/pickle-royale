@@ -37,39 +37,39 @@ type P = { className?: string; size?: number };
 
 /* ---- navigation ---- */
 
+// Solid, chunky glyphs — they carry weight (and personality) rather than
+// reading as thin hairline icons. They fill with currentColor, so an active
+// tab paints them lime and an inactive one paints them muted.
+
 export const TrophyIcon = (p: P) => (
-  <Svg {...p}>
-    <path d="M7 4h10v5a5 5 0 0 1-10 0z" />
-    <path d="M7 5H4a3 3 0 0 0 3 4.5" />
-    <path d="M17 5h3a3 3 0 0 1-3 4.5" />
-    <path d="M12 14v3" />
-    <path d="M8.5 20h7" />
-    <path d="M10 17h4v3h-4z" />
+  <Svg {...p} stroke={false}>
+    <path d="M7 3h10a1 1 0 0 1 1 1v1h2.5a1 1 0 0 1 1 1c0 2.7-2 4.7-4.7 5A6 6 0 0 1 13 14.8V17h2.5a1 1 0 0 1 1 1v.5H7.5V18a1 1 0 0 1 1-1H11v-2.2a6 6 0 0 1-3.8-3.8C4.5 10.7 2.5 8.7 2.5 6a1 1 0 0 1 1-1H6V4a1 1 0 0 1 1-1zM6 7H4.6c.3 1.3 1.2 2.2 2.4 2.5A15 15 0 0 1 6 7zm12 0a15 15 0 0 1-1 2.5c1.2-.3 2.1-1.2 2.4-2.5H18z" />
+    <rect x="6.5" y="20" width="11" height="2" rx="1" />
   </Svg>
 );
 
 export const PaddlesIcon = (p: P) => (
-  <Svg {...p}>
-    <circle cx="7.5" cy="7" r="3.2" />
-    <path d="M9.6 9.4 19 19" />
-    <circle cx="16.5" cy="7" r="3.2" />
-    <path d="M14.4 9.4 5 19" />
+  <Svg {...p} stroke={false}>
+    <g transform="rotate(-38 12 11)">
+      <ellipse cx="12" cy="8" rx="5" ry="6" />
+      <rect x="10.5" y="13" width="3" height="7" rx="1.5" />
+    </g>
+    <circle cx="18.4" cy="18.4" r="2.4" />
   </Svg>
 );
 
 export const StatsIcon = (p: P) => (
-  <Svg {...p}>
-    <path d="M5 20v-7" />
-    <path d="M12 20V7" />
-    <path d="M19 20v-10" />
-    <path d="M4 20h16" />
+  <Svg {...p} stroke={false}>
+    <rect x="3" y="12" width="4.6" height="9" rx="1.6" />
+    <rect x="9.7" y="5" width="4.6" height="16" rx="1.6" />
+    <rect x="16.4" y="9" width="4.6" height="12" rx="1.6" />
   </Svg>
 );
 
 export const PersonIcon = (p: P) => (
-  <Svg {...p}>
-    <circle cx="12" cy="8" r="3.6" />
-    <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
+  <Svg {...p} stroke={false}>
+    <circle cx="12" cy="7.5" r="4.2" />
+    <path d="M3.8 20.5a8.2 8.2 0 0 1 16.4 0 1 1 0 0 1-1 1.1H4.8a1 1 0 0 1-1-1.1z" />
   </Svg>
 );
 

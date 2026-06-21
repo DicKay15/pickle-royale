@@ -586,46 +586,20 @@ input {
 }
 
 .tab-log {
-  position: relative;
   width: 58px;
   height: 58px;
   flex: none;
   margin: -16px 6px 0;
   border-radius: 50%;
-  background: var(--cream, #fdf6e3);
+  background: var(--lime);
   border: var(--border);
   box-shadow: 0 4px 0 var(--ink);
   display: grid;
   place-items: center;
-  overflow: visible;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* Sir Dill rides the log button — character, not a plain green plus. */
-.tab-log-mascot {
-  width: 46px;
-  height: 46px;
-  display: block;
-  pointer-events: none;
-}
-
-/* small "+" badge so it still reads as "add a match" */
-.tab-log-plus {
-  position: absolute;
-  right: -3px;
-  bottom: -3px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--lime);
-  border: 2px solid var(--ink);
-  display: grid;
-  place-items: center;
-  font-size: 15px;
-  line-height: 1;
+  font-size: 28px;
   font-family: var(--font-display);
   color: var(--ink);
-  pointer-events: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .tab-log:active {
