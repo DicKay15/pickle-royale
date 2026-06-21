@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, type MatchEntry, type MatchPlayer } from "../api";
 import { ConfirmModal } from "./Modal";
+import { CloseIcon } from "./icons";
 
 function fmtDate(iso: string) {
   const d = new Date(iso.replace(" ", "T") + "Z");
@@ -105,12 +106,20 @@ export default function History({
         matches.map((m, i) => (
           <article
             key={m.id}
-            className={`h-card ${isAdmin ? "tappable" : ""}`}
+            className="h-card"
             style={{ animationDelay: `${Math.min(i, 6) * 0.05}s` }}
-            onClick={isAdmin ? () => setConfirm(m) : undefined}
           >
             <div className="h-top">
               <span>{fmtDate(m.playedAt)}</span>
+              {isAdmin && (
+                <button
+                  className="h-del"
+                  aria-label="Delete this match"
+                  onClick={() => setConfirm(m)}
+                >
+                  <CloseIcon className="h-del-ico" />
+                </button>
+              )}
             </div>
             <div className="h-teams">
               <SidePlayers players={m.teamA} />

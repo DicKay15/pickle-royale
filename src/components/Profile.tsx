@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, type Profile as ProfileData } from "../api";
 import { ProfileHero, StatsSections } from "./profileParts";
+import { ShareIcon } from "./icons";
 
 /** Standings detail view for ANY player (no achievements — those are private
  *  to each user in their own Profile tab). */
@@ -21,32 +22,34 @@ export default function Profile({
 }) {
   const [p, setP] = useState<ProfileData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviting, setInviting] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     api.profile(id).then(setP).catch((e) => setError(e.message));
   }, [id, version]);
 
-  const invite = async () => {
-    const email = inviteEmail.trim();
-    if (!email || inviting) return;
-    setInviting(true);
+  const inviteMessage = (name: string) =>
+    `Join our Pickle Royale group and claim your player "${name}"! 🥒🏓`;
+
+  // Native share sheet (WhatsApp, Messages, etc.) with a copy-link fallback.
+  const shareInvite = async () => {
+    if (sharing) return;
+    setSharing(true);
     try {
-      const res = await api.invitePlayer(id, email);
-      showToast(
-        res.linked
-          ? "Linked! They're in. 🎉"
-          : res.sent
-            ? `Invite emailed to ${email} ✉️`
-            : "Email saved — they'll auto-link when they sign in.",
-      );
-      setInviteEmail("");
-      onChanged();
+      const { url } = await api.inviteLink(id);
+      const text = inviteMessage(p!.name);
+      if (navigator.share) {
+        await navigator.share({ title: "Pickle Royale", text, url });
+      } else {
+        await navigator.clipboard.writeText(`${text} ${url}`);
+        showToast("Invite copied — paste it in WhatsApp 📋");
+      }
     } catch (e) {
-      showToast(e instanceof Error ? e.message : "Couldn't invite");
+      // user dismissing the native share sheet is not an error
+      if (e instanceof Error && e.name === "AbortError") return;
+      showToast(e instanceof Error ? e.message : "Couldn't make a link");
     } finally {
-      setInviting(false);
+      setSharing(false);
     }
   };
 
@@ -91,46 +94,31 @@ export default function Profile({
       )}
 
       <ProfileHero p={p} />
-      <StatsSections p={p} />
 
       {p.ownerUserId != null ? (
         <div className="claimed-note">✅ This player has been claimed</div>
       ) : (
         isAdmin && (
           <div className="invite-card">
-            <h4>Invite {p.name} to claim this profile</h4>
+            <h4>Invite {p.name}</h4>
             <p>
-              Email them the invite, or copy a link to share in WhatsApp. They'll
-              get this player (with all its history) when they sign in.
+              Send them a link to join the group and claim this player, with all
+              its match history.
             </p>
-            <div className="invite-row">
-              <input
-                className="field-input"
-                style={{ marginBottom: 0 }}
-                type="email"
-                inputMode="email"
-                placeholder="their@gmail.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && invite()}
-              />
-              <button className="cta" disabled={inviting} onClick={invite}>
-                {inviting ? "…" : "Email"}
+            <div className="invite-actions">
+              <button className="cta" disabled={sharing} onClick={shareInvite}>
+                <ShareIcon className="cta-ico" />
+                {sharing ? "…" : "Share link"}
+              </button>
+              <button className="cta secondary" onClick={copyInviteLink}>
+                🔗 Copy link
               </button>
             </div>
-            <button
-              className="cta secondary"
-              style={{ marginTop: 8 }}
-              onClick={copyInviteLink}
-            >
-              🔗 Copy invite link
-            </button>
-            {p.invitedEmail && (
-              <div className="field-hint">Currently invited: {p.invitedEmail}</div>
-            )}
           </div>
         )
       )}
+
+      <StatsSections p={p} />
     </div>
   );
 }

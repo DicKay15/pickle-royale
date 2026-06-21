@@ -586,20 +586,46 @@ input {
 }
 
 .tab-log {
+  position: relative;
   width: 58px;
   height: 58px;
   flex: none;
   margin: -16px 6px 0;
   border-radius: 50%;
-  background: var(--lime);
+  background: var(--cream, #fdf6e3);
   border: var(--border);
   box-shadow: 0 4px 0 var(--ink);
   display: grid;
   place-items: center;
-  font-size: 28px;
+  overflow: visible;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Sir Dill rides the log button — character, not a plain green plus. */
+.tab-log-mascot {
+  width: 46px;
+  height: 46px;
+  display: block;
+  pointer-events: none;
+}
+
+/* small "+" badge so it still reads as "add a match" */
+.tab-log-plus {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--lime);
+  border: 2px solid var(--ink);
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  line-height: 1;
   font-family: var(--font-display);
   color: var(--ink);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  pointer-events: none;
 }
 
 .tab-log:active {
@@ -1197,18 +1223,10 @@ input {
   animation: page-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
-.h-card.tappable {
-  cursor: pointer;
-}
-.h-card.tappable:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 var(--ink);
-}
-
 .h-top {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   font-size: 11px;
   font-weight: 700;
   color: var(--ink-soft);
@@ -1217,17 +1235,26 @@ input {
   margin-bottom: 8px;
 }
 
+/* X sits flush top-right, aligned with the date row; pull it into the
+   card's own padding so it lines up with the card edge, not floating. */
 .h-del {
-  color: var(--ink-soft);
-  font-size: 14px;
-  padding: 4px 8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -6px -6px -6px 0;
   border-radius: 8px;
-  min-width: 44px;
-  min-height: 44px;
+  color: var(--ink-soft);
+}
+
+.h-del-ico {
+  width: 16px;
+  height: 16px;
 }
 
 .h-del:active {
   background: var(--coral-soft);
+  color: var(--coral);
 }
 
 .h-teams {
@@ -2221,17 +2248,24 @@ input {
   line-height: 1.4;
 }
 
-.invite-row {
+.invite-actions {
   display: flex;
   gap: 8px;
-  align-items: stretch;
 }
 
-.invite-row .cta {
-  width: auto;
-  flex: none;
+.invite-actions .cta {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   font-size: 14px;
-  padding: 0 16px;
+  padding: 0 12px;
+}
+
+.cta-ico {
+  width: 17px;
+  height: 17px;
 }
 
 .field-hint {

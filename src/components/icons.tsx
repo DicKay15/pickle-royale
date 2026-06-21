@@ -95,6 +95,20 @@ export const LockIcon = (p: P) => (
   </Svg>
 );
 
+export const CloseIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M6 6l12 12M18 6L6 18" />
+  </Svg>
+);
+
+export const ShareIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 4v12" />
+    <path d="M8 8l4-4 4 4" />
+    <path d="M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6" />
+  </Svg>
+);
+
 /* ---- achievements ---- */
 
 const Star = (p: P) => (
