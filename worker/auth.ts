@@ -58,7 +58,7 @@ export async function currentUser(c: Ctx): Promise<SessionUser | null> {
   }
 }
 
-async function setSession(c: Ctx, uid: number): Promise<void> {
+export async function setSession(c: Ctx, uid: number): Promise<void> {
   const exp = Math.floor(Date.now() / 1000) + SESSION_DAYS * 86400;
   const token = await sign({ uid, exp }, secret(c.env));
   setCookie(c, COOKIE, token, {

@@ -11,7 +11,9 @@
     // /auth/login reach the Worker (and redirect to Google) instead of
     // being captured by the SPA not-found handler. Everything else is
     // served as a static asset directly.
-    "run_worker_first": ["/api/*", "/auth/*"]
+    // /demo is here for the same reason: it's a browser navigation that
+    // must reach the Worker to mint a demo session before any HTML is served.
+    "run_worker_first": ["/api/*", "/auth/*", "/demo"]
   },
   "d1_databases": [
     {
@@ -28,8 +30,10 @@
       "bucket_name": "pickle-royale-backups"
     }
   ],
+  // Mondays 06:00 UTC = DB export. Daily 04:00 UTC = delete demo accounts
+  // (and their groups) older than 24h.
   "triggers": {
-    "crons": ["0 6 * * 1"]
+    "crons": ["0 6 * * 1", "0 4 * * *"]
   },
   // Custom domain pickleball.dhrumilkherde.com is attached via the
   // Cloudflare API at deploy time — keeping `routes` here breaks

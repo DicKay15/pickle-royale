@@ -98,6 +98,23 @@ input {
 
 /* ---------- header ---------- */
 
+.demo-bar {
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  background: var(--gold);
+  color: var(--ink);
+  padding: 9px 13px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.demo-bar strong {
+  font-family: var(--font-display);
+  letter-spacing: 0.3px;
+}
+
 .masthead {
   display: flex;
   align-items: center;

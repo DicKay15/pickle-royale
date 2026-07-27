@@ -163,6 +163,7 @@ export interface Me {
     name: string | null;
     avatarUrl: string | null;
     advancedMode: boolean;
+    demo?: boolean; // signed in via /demo with throwaway seeded data
   };
   groups: MeGroup[];
 }

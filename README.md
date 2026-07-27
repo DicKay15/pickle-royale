@@ -2,6 +2,7 @@
 
 Playful pickleball rankings + match-log for weekly 2v2 games.
 **Live:** https://pickleball.dhrumilkherde.com
+**Try it without an account:** https://pickleball.dhrumilkherde.com/demo
 
 **📚 Full documentation:** [`docs/`](docs/README.md) — product, architecture,
 algorithm, decisions, the bugs we hit, roadmap, and how to operate it.
@@ -11,6 +12,13 @@ algorithm, decisions, the bugs we hit, roadmap, and how to operate it.
 - Auto-calculates everyone's **Royale Rating** (custom Elo) and re-ranks the leaderboard
 - Crowns a reigning champ, tracks streaks, sparklines, dream partners & nemeses
 - Installable PWA, works great on phone at the court
+
+## Demo mode
+`/demo` signs a visitor in without Google. Each visit mints its own throwaway
+user + a group seeded with six players and six weeks of matches (deterministic,
+see `worker/demo.ts`), so they land on a populated ladder as its admin and can
+log a match themselves. Demo accounts and their groups are deleted by a daily
+cron (04:00 UTC); real groups are never touched.
 
 ## Stack
 React + TypeScript · Vite · Hono · Cloudflare Workers + D1 · PWA

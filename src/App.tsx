@@ -226,6 +226,12 @@ export default function App() {
 
   return (
     <div className="shell">
+      {me.user.demo && (
+        <div className="demo-bar">
+          <strong>Demo group.</strong> Sample players and a season of matches.
+          Log a match and the ladder moves. Resets daily.
+        </div>
+      )}
       <header className="masthead">
         <button
           className={`masthead-badge ${wiggle ? "wiggle" : ""}`}

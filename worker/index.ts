@@ -1,6 +1,7 @@
 import { Hono, type MiddlewareHandler } from "hono";
 import { sign, verify } from "hono/jwt";
-import { auth, currentUser, type Env, type SessionUser } from "./auth";
+import { auth, currentUser, setSession, type Env, type SessionUser } from "./auth";
+import { createDemoAccount, isDemoEmail, sweepDemoAccounts } from "./demo";
 import {
   replayMatches,
   teamWinProbability,
@@ -22,6 +23,20 @@ const app = new Hono<{ Bindings: Env; Variables: Vars }>();
 
 // auth routes (/auth/login, /auth/callback, /auth/logout, /auth/dev)
 app.route("/", auth);
+
+/**
+ * Public demo: no Google account needed. Mints a throwaway user + a fully
+ * seeded group, signs the visitor in as its admin, and drops them on the
+ * leaderboard. Each visit gets its own copy, swept by cron after 24h.
+ * (Needs "/demo" in wrangler.jsonc assets.run_worker_first, or the SPA
+ * not-found handler eats the navigation before the Worker runs.)
+ */
+app.get("/demo", async (c) => {
+  const { userId, groupId } = await createDemoAccount(c.env.DB);
+  await recompute(c.env.DB, groupId);
+  await setSession(c, userId);
+  return c.redirect("/?demo=1");
+});
 
 // ---------- middleware ----------
 
@@ -269,6 +284,7 @@ app.get("/api/me", requireUser, async (c) => {
       name: user.name,
       avatarUrl: user.avatar_url,
       advancedMode: !!user.advanced_mode,
+      demo: isDemoEmail(user.email),
     },
     groups: groups.map((g) => ({
       id: g.id,
@@ -1484,7 +1500,12 @@ app.notFound((c) => c.json({ error: "Not found" }, 404));
 export default {
   fetch: (request: Request, env: Env, ctx: ExecutionContext) =>
     app.fetch(request, env, ctx),
-  scheduled: (_event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
-    ctx.waitUntil(runBackup(env));
+  scheduled: (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+    // "0 6 * * 1" = weekly backup; "0 4 * * *" = nightly demo sweep.
+    if (event.cron === "0 4 * * *") {
+      ctx.waitUntil(sweepDemoAccounts(env.DB));
+    } else {
+      ctx.waitUntil(runBackup(env));
+    }
   },
 };
