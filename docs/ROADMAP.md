@@ -98,6 +98,23 @@ status at the last update.
 
 ---
 
+### v5.2 — Match editing, team balancer, exports
+- [x] **Edit a logged match** (admin): "Fix the score" modal on Rumbles.
+      Ratings replay from the edit forward so later matches stay correct.
+      Omitted fields keep their stored value, so fixing a score can't wipe
+      the "who carried?" split.
+- [x] **Team balancer** on Log Match: "Who's up?" picks four at random,
+      "Balance" re-pairs the chosen four into the fairest 2v2 and reports
+      the rating gap ("Dead even · 0 pt gap").
+- [x] **Export a group's stats** as CSV, from Profile → Settings.
+- [x] **/privacy and /support pages**, required before either store listing.
+- [x] Rating engine hardening: capped the margin-of-victory multiplier
+      (it had a singularity that went negative past a 2200-point gap) and
+      made `teamWinProbability` stop mutating the ratings map it reads.
+      Verified a no-op against the full production match log.
+
+**v5.2 is complete.** 🎉
+
 ## In progress / next
 
 Nothing committed right now — see Parked ideas below for candidates.
@@ -109,12 +126,10 @@ Nothing committed right now — see Parked ideas below for candidates.
 - Publish the Google sign-in screen so anyone can join without being added as a
   Google "test user" first.
 - Seasons / periodic resets with a hall of fame.
-- Doubles rotation helper (suggest balanced random teams for the night).
 - Score-by-game tracking within a match.
 - Granular per-member "can add players" permission (today it is one group-wide
   toggle, set by the admin).
 - Push notifications ("you got passed on the ladder").
-- Export a group's stats.
 
 ---
 
