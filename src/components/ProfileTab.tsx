@@ -8,6 +8,7 @@ import {
   type Profile as ProfileData,
 } from "../api";
 import { ProfileHero, AchievementsGrid } from "./profileParts";
+import { DownloadIcon } from "./icons";
 
 export default function ProfileTab({
   me,
@@ -195,6 +196,14 @@ export default function ProfileTab({
       </button>
       <div className="acct-hint">
         Adds a last-game nudge and a weekly movers card to the Standings page.
+      </div>
+
+      <a className="acct-row-link" href={api.exportCsvUrl()} download>
+        <DownloadIcon className="acct-row-ico" />
+        <span>Export this group as CSV</span>
+      </a>
+      <div className="acct-hint">
+        Every match with scores and rating changes, ready for a spreadsheet.
       </div>
 
       {/* manage group (admin only) */}

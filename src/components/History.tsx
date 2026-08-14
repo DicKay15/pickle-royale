@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { api, type MatchEntry, type MatchPlayer } from "../api";
 import { ConfirmModal } from "./Modal";
-import { CloseIcon } from "./icons";
+import EditMatchModal from "./EditMatchModal";
+import { CloseIcon, PencilIcon } from "./icons";
 
 function fmtDate(iso: string) {
   const d = new Date(iso.replace(" ", "T") + "Z");
@@ -59,6 +60,7 @@ export default function History({
 }) {
   const [matches, setMatches] = useState<MatchEntry[] | null>(null);
   const [confirm, setConfirm] = useState<MatchEntry | null>(null);
+  const [editing, setEditing] = useState<MatchEntry | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -112,13 +114,22 @@ export default function History({
             <div className="h-top">
               <span>{fmtDate(m.playedAt)}</span>
               {isAdmin && (
-                <button
-                  className="h-del"
-                  aria-label="Delete this match"
-                  onClick={() => setConfirm(m)}
-                >
-                  <CloseIcon className="h-del-ico" />
-                </button>
+                <span className="h-actions">
+                  <button
+                    className="h-del"
+                    aria-label={`Edit the ${m.scoreA}–${m.scoreB} match`}
+                    onClick={() => setEditing(m)}
+                  >
+                    <PencilIcon className="h-del-ico" />
+                  </button>
+                  <button
+                    className="h-del"
+                    aria-label={`Delete the ${m.scoreA}–${m.scoreB} match`}
+                    onClick={() => setConfirm(m)}
+                  >
+                    <CloseIcon className="h-del-ico" />
+                  </button>
+                </span>
               )}
             </div>
             <div className="h-teams">
@@ -136,6 +147,19 @@ export default function History({
             </div>
           </article>
         ))
+      )}
+
+      {editing && (
+        <EditMatchModal
+          match={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            showToast("Match corrected — ratings recalculated");
+            onChanged();
+          }}
+          showToast={showToast}
+        />
       )}
 
       {confirm && (

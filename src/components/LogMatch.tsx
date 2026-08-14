@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Stepper from "./Stepper";
+import { bestSplit, pickRandom, fairnessLabel } from "../../shared/teams";
 import { api, type BoardEntry, type LogResult } from "../api";
 
 type Side = "A" | "B" | null;
@@ -61,86 +63,6 @@ function Confetti() {
         />
       ))}
     </>
-  );
-}
-
-/* ---------- stepper with hold-to-repeat ---------- */
-
-function Stepper({
-  value,
-  onChange,
-  label,
-  presets,
-  hideVal,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  label: string;
-  presets?: number[];
-  hideVal?: boolean;
-}) {
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const valRef = useRef(value);
-  valRef.current = value;
-
-  const stop = () => {
-    if (timer.current) clearInterval(timer.current);
-    timer.current = null;
-  };
-
-  const start = (dir: 1 | -1) => {
-    onChange(Math.min(99, Math.max(0, valRef.current + dir)));
-    stop();
-    let ticks = 0;
-    timer.current = setInterval(() => {
-      ticks++;
-      if (ticks > 3) {
-        onChange(Math.min(99, Math.max(0, valRef.current + dir)));
-      }
-    }, 120);
-  };
-
-  useEffect(() => stop, []);
-
-  return (
-    <div className="stepper" role="group" aria-label={label}>
-      <button
-        type="button"
-        aria-label={`${label} minus 1`}
-        onPointerDown={() => start(-1)}
-        onPointerUp={stop}
-        onPointerLeave={stop}
-        onContextMenu={(e) => e.preventDefault()}
-      >
-        −
-      </button>
-      {!hideVal && (
-        <div className="val" aria-live="polite">
-          {value}
-        </div>
-      )}
-      <button
-        type="button"
-        aria-label={`${label} plus 1`}
-        onPointerDown={() => start(1)}
-        onPointerUp={stop}
-        onPointerLeave={stop}
-        onContextMenu={(e) => e.preventDefault()}
-      >
-        +
-      </button>
-      {presets?.map((p) => (
-        <button
-          key={p}
-          type="button"
-          className="preset"
-          aria-label={`Add ${p} to ${label}`}
-          onClick={() => onChange(Math.min(99, value + p))}
-        >
-          +{p}
-        </button>
-      ))}
-    </div>
   );
 }
 
@@ -296,6 +218,7 @@ export default function LogMatch({
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<LogResult | null>(null);
   const [loadLine] = useState(() => pick(LOAD_LINES));
+  const [balanceNote, setBalanceNote] = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -314,6 +237,8 @@ export default function LogMatch({
   );
 
   const cycle = (id: number) => {
+    // Any manual change to the line-up invalidates the balance readout.
+    setBalanceNote(null);
     setSides((s) => {
       const cur = s[id] ?? null;
       let next: Side;
@@ -325,6 +250,29 @@ export default function LogMatch({
   };
 
   const teamsSet = teamA.length === 2 && teamB.length === 2;
+
+  /** Drop four players onto the two sides, fairest pairing first. */
+  const applySplit = (four: BoardEntry[]) => {
+    const s = bestSplit(four);
+    const next: Record<number, Side> = {};
+    s.teamA.forEach((p) => (next[p.id] = "A"));
+    s.teamB.forEach((p) => (next[p.id] = "B"));
+    setSides(next);
+    setBalanceNote(`${fairnessLabel(s.gap)} · ${Math.round(s.gap)} pt gap`);
+  };
+
+  /** Pick four at random from everyone available, then balance them. */
+  const rollFour = () => {
+    if (!players || players.length < 4) return;
+    applySplit(pickRandom(players, 4));
+  };
+
+  /** Re-pair the four already chosen into the fairest matchup. */
+  const balanceChosen = () => {
+    if (!teamsSet) return;
+    applySplit([...teamA, ...teamB]);
+  };
+
   // real pickleball: reach 11 (or 15/21), win by 2
   const scoreOk =
     scoreA !== scoreB &&
@@ -373,6 +321,7 @@ export default function LogMatch({
 
   const reset = () => {
     setSides({});
+    setBalanceNote(null);
     setScoreA(0);
     setScoreB(0);
     setCarryA(50);
@@ -408,6 +357,36 @@ export default function LogMatch({
         >
           Tap a player to assign: <b style={{ color: "var(--court)" }}>Team Green</b> →{" "}
           <b style={{ color: "var(--coral)" }}>Team Orange</b> → out
+        </div>
+
+        <div className="shuffle-bar">
+          <button
+            type="button"
+            className="shuffle-btn"
+            onClick={rollFour}
+            disabled={players.length < 4}
+            title={
+              players.length < 4
+                ? "Add at least 4 players first"
+                : "Pick 4 at random and balance them"
+            }
+          >
+            🎲 Who&apos;s up?
+          </button>
+          <button
+            type="button"
+            className="shuffle-btn"
+            onClick={balanceChosen}
+            disabled={!teamsSet}
+            title={
+              teamsSet
+                ? "Re-pair these 4 for the fairest game"
+                : "Pick 4 players first"
+            }
+          >
+            ⚖️ Balance
+          </button>
+          {balanceNote && <span className="shuffle-note">{balanceNote}</span>}
         </div>
         <div className="chip-grid">
           {players.map((p) => {

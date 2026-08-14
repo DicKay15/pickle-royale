@@ -13,7 +13,7 @@
     // served as a static asset directly.
     // /demo is here for the same reason: it's a browser navigation that
     // must reach the Worker to mint a demo session before any HTML is served.
-    "run_worker_first": ["/api/*", "/auth/*", "/demo"]
+    "run_worker_first": ["/api/*", "/auth/*", "/demo", "/privacy", "/support"]
   },
   "d1_databases": [
     {

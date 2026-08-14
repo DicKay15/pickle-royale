@@ -20,6 +20,16 @@ export const PROVISIONAL_GAMES = 10;
 export const MIN_CONTRIB = 0.1;
 export const MAX_CONTRIB = 0.9;
 const RATING_FLOOR = 100;
+/**
+ * Ceiling on the margin-of-victory multiplier, and a floor under its
+ * denominator. Without these the curve has a singularity: at a rating gap
+ * of -2200 the denominator hits 0 (multiplier -> Infinity) and past it the
+ * multiplier flips NEGATIVE, which would invert the result and hand the
+ * winners a rating loss. Both guards only engage past a ~1150-point gap,
+ * which is far outside any real ladder, so normal play is untouched.
+ */
+const MAX_MOV = 5;
+const MIN_MOV_DENOM = 0.6;
 
 export interface MatchRecord {
   id: number;
@@ -67,7 +77,8 @@ export function movMultiplier(
   loserElo: number,
 ): number {
   const diff = Math.max(1, Math.abs(pointDiff));
-  return (Math.log(diff + 1) * 2.2) / ((winnerElo - loserElo) * 0.001 + 2.2);
+  const denom = Math.max(MIN_MOV_DENOM, (winnerElo - loserElo) * 0.001 + 2.2);
+  return Math.min(MAX_MOV, (Math.log(diff + 1) * 2.2) / denom);
 }
 
 /** K-factor: fast while calibrating, stable after PROVISIONAL_GAMES. */
@@ -85,8 +96,11 @@ export function teamWinProbability(
   ratings: Record<number, PlayerState>,
   m: Pick<MatchRecord, "a1" | "a2" | "b1" | "b2">,
 ): number {
-  const ra = (get(ratings, m.a1).rating + get(ratings, m.a2).rating) / 2;
-  const rb = (get(ratings, m.b1).rating + get(ratings, m.b2).rating) / 2;
+  // Read-only: must NOT insert missing players the way get() does, or a
+  // preview call would quietly seed the caller's rating map.
+  const at = (id: number) => ratings[id]?.rating ?? BASE_RATING;
+  const ra = (at(m.a1) + at(m.a2)) / 2;
+  const rb = (at(m.b1) + at(m.b2)) / 2;
   return expectedScore(ra, rb);
 }
 

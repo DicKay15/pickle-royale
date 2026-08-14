@@ -1248,6 +1248,127 @@ input {
   color: var(--coral);
 }
 
+/* Edit + delete sit together; keep the pair aligned to the card edge. */
+.h-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.h-actions .h-del {
+  margin-right: 0;
+}
+
+.h-actions .h-del:first-child:active {
+  background: var(--lime-soft);
+  color: var(--court);
+}
+
+/* ---- team shuffle / balance ---- */
+
+.shuffle-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.shuffle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--court-deep);
+  background: var(--lime-soft);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 0 2px 0 var(--ink);
+  padding: 7px 13px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.shuffle-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--ink);
+}
+
+.shuffle-btn:disabled {
+  opacity: 0.45;
+  box-shadow: 0 2px 0 rgba(20, 42, 31, 0.35);
+  cursor: not-allowed;
+}
+
+.shuffle-ico {
+  width: 15px;
+  height: 15px;
+}
+
+.shuffle-note {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--court);
+  background: var(--cream-dim);
+  border-radius: 999px;
+  padding: 4px 10px;
+  animation: page-in 0.3s ease both;
+}
+
+/* ---- fix-the-score modal ---- */
+
+.edit-match {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.edit-row {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: 14px;
+  background: var(--cream-dim);
+}
+
+.edit-team {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.edit-team.a {
+  color: var(--court);
+}
+
+.edit-team.b {
+  color: var(--coral);
+}
+
+.edit-vs {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.edit-note {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  text-align: center;
+  padding: 0 4px;
+}
+
 .h-teams {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -2687,4 +2808,34 @@ input {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* CSV export row in Profile → Settings */
+.acct-row-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 15px;
+  margin-bottom: 6px;
+  background: #fff;
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.acct-row-link:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--ink);
+}
+
+.acct-row-ico {
+  width: 18px;
+  height: 18px;
+  color: var(--court);
+  flex: none;
 }

@@ -208,3 +208,39 @@ describe("teamWinProbability", () => {
     ).toBeGreaterThan(0.5);
   });
 });
+
+describe("movMultiplier — extreme-gap guards", () => {
+  it("stays finite and positive at any rating gap", () => {
+    for (const gap of [0, -500, -1000, -1600, -2000, -2200, -2201, -5000, 2000]) {
+      const mov = movMultiplier(11, 1200 + gap, 1200);
+      expect(Number.isFinite(mov)).toBe(true);
+      expect(mov).toBeGreaterThan(0);
+    }
+  });
+
+  it("never exceeds the ceiling, even for an absurd upset blowout", () => {
+    expect(movMultiplier(99, 100, 2400)).toBeLessThanOrEqual(5);
+  });
+
+  it("does not change behaviour inside a realistic ladder spread", () => {
+    // Production spread has never exceeded ~600 points; the guards must be
+    // a no-op there or replaying the log would silently reprice everyone.
+    for (const gap of [-600, -300, 0, 300, 600]) {
+      const guarded = movMultiplier(11, 1200 + gap, 1200);
+      const raw = (Math.log(12) * 2.2) / (gap * 0.001 + 2.2);
+      expect(guarded).toBeCloseTo(raw, 10);
+    }
+  });
+});
+
+describe("teamWinProbability — purity", () => {
+  it("does not mutate the ratings map it is given", () => {
+    const ratings: Record<number, PlayerState> = {};
+    teamWinProbability(ratings, { a1: 1, a2: 2, b1: 3, b2: 4 });
+    expect(Object.keys(ratings)).toHaveLength(0);
+  });
+
+  it("still treats unknown players as base rating", () => {
+    expect(teamWinProbability({}, { a1: 1, a2: 2, b1: 3, b2: 4 })).toBeCloseTo(0.5);
+  });
+});

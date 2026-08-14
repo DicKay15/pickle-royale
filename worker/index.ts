@@ -2,6 +2,7 @@ import { Hono, type MiddlewareHandler } from "hono";
 import { sign, verify } from "hono/jwt";
 import { auth, currentUser, setSession, type Env, type SessionUser } from "./auth";
 import { createDemoAccount, isDemoEmail, sweepDemoAccounts } from "./demo";
+import { privacyPage, supportPage } from "./legal";
 import {
   replayMatches,
   teamWinProbability,
@@ -31,6 +32,12 @@ app.route("/", auth);
  * (Needs "/demo" in wrangler.jsonc assets.run_worker_first, or the SPA
  * not-found handler eats the navigation before the Worker runs.)
  */
+/* Public legal pages. Both stores require a reachable privacy-policy URL,
+ * and Apple checks the support URL resolves. Like /demo, these must be listed
+ * in wrangler.jsonc assets.run_worker_first or the SPA handler swallows them. */
+app.get("/privacy", () => privacyPage());
+app.get("/support", () => supportPage());
+
 app.get("/demo", async (c) => {
   const { userId, groupId } = await createDemoAccount(c.env.DB);
   await recompute(c.env.DB, groupId);
@@ -909,32 +916,30 @@ app.post("/api/groups/:gid/players", async (c) => {
   }
 });
 
-app.post("/api/groups/:gid/matches", async (c) => {
-  const gid = c.get("groupId");
-  const b = await c.req.json<{
-    a1?: number;
-    a2?: number;
-    b1?: number;
-    b2?: number;
-    scoreA?: number;
-    scoreB?: number;
-    contribA?: number;
-    contribB?: number;
-  }>();
+interface MatchInput {
+  a1?: number;
+  a2?: number;
+  b1?: number;
+  b2?: number;
+  scoreA?: number;
+  scoreB?: number;
+  contribA?: number;
+  contribB?: number;
+}
 
+/**
+ * Shared validation for creating AND editing a match, so the two paths can
+ * never drift apart. Returns an error string, or null when the input is good.
+ */
+function validateMatchInput(
+  b: MatchInput,
+  activeIds: Set<number>,
+): string | null {
   const ids = [b.a1, b.a2, b.b1, b.b2];
-  if (ids.some((x) => typeof x !== "number")) {
-    return c.json({ error: "Pick 4 players" }, 400);
-  }
-  if (new Set(ids).size !== 4) {
-    return c.json({ error: "All 4 players must be different" }, 400);
-  }
-
-  const db = c.env.DB;
-  const activePlayers = await loadPlayers(db, gid);
-  const activeIds = new Set(activePlayers.filter((p) => p.active).map((p) => p.id));
+  if (ids.some((x) => typeof x !== "number")) return "Pick 4 players";
+  if (new Set(ids).size !== 4) return "All 4 players must be different";
   if (!ids.every((x) => activeIds.has(x as number))) {
-    return c.json({ error: "One of those players isn't in this group" }, 400);
+    return "One of those players isn't in this group";
   }
 
   const sA = b.scoreA;
@@ -949,17 +954,29 @@ app.post("/api/groups/:gid/matches", async (c) => {
     sA > 99 ||
     sB > 99
   ) {
-    return c.json({ error: "Scores must be whole numbers (0–99)" }, 400);
+    return "Scores must be whole numbers (0–99)";
   }
-  if (sA === sB) {
-    return c.json({ error: "No draws in pickleball — someone won!" }, 400);
-  }
-  if (Math.max(sA, sB) < 11) {
-    return c.json({ error: "Winning score must reach at least 11" }, 400);
-  }
-  if (Math.abs(sA - sB) < 2) {
-    return c.json({ error: "You have to win by 2!" }, 400);
-  }
+  if (sA === sB) return "No draws in pickleball — someone won!";
+  if (Math.max(sA, sB) < 11) return "Winning score must reach at least 11";
+  if (Math.abs(sA - sB) < 2) return "You have to win by 2!";
+  return null;
+}
+
+app.post("/api/groups/:gid/matches", async (c) => {
+  const gid = c.get("groupId");
+  const b = await c.req.json<MatchInput>();
+
+  const db = c.env.DB;
+  const activePlayers = await loadPlayers(db, gid);
+  const activeIds = new Set(
+    activePlayers.filter((p) => p.active).map((p) => p.id),
+  );
+
+  const invalid = validateMatchInput(b, activeIds);
+  if (invalid) return c.json({ error: invalid }, 400);
+
+  const sA = b.scoreA!;
+  const sB = b.scoreB!;
 
   const before = replayMatches((await loadMatches(db, gid)).map(toMatchRecord));
   const winProbA = teamWinProbability(before.ratings, {
@@ -1007,6 +1024,79 @@ app.post("/api/groups/:gid/matches", async (c) => {
   return c.json({ changes: newest, upset: winnerProb < 0.35, winnerProb }, 201);
 });
 
+/**
+ * Edit a logged match (admin only). Ratings are always derived by replaying
+ * the whole log, so correcting a typo'd score simply rewrites the row and
+ * recomputes — every downstream rating heals itself.
+ */
+app.patch("/api/groups/:gid/matches/:id", async (c) => {
+  if (c.get("role") !== "admin") {
+    return c.json({ error: "Only the group admin can edit matches" }, 403);
+  }
+  const gid = c.get("groupId");
+  const id = Number(c.req.param("id"));
+  if (!Number.isInteger(id)) return c.json({ error: "Match not found" }, 404);
+
+  const db = c.env.DB;
+  const existing = await db
+    .prepare(
+      `SELECT a1, a2, b1, b2, score_a, score_b, contrib_a, contrib_b
+         FROM matches WHERE id = ? AND group_id = ?`,
+    )
+    .bind(id, gid)
+    .first<{
+      a1: number; a2: number; b1: number; b2: number;
+      score_a: number; score_b: number;
+      contrib_a: number; contrib_b: number;
+    }>();
+  if (!existing) return c.json({ error: "Match not found" }, 404);
+
+  // True PATCH: anything the client omits keeps its stored value, so a
+  // score-only correction can't silently reset the "who carried?" split.
+  const raw = await c.req.json<MatchInput>().catch(() => ({}) as MatchInput);
+  const b: MatchInput = {
+    a1: raw.a1 ?? existing.a1,
+    a2: raw.a2 ?? existing.a2,
+    b1: raw.b1 ?? existing.b1,
+    b2: raw.b2 ?? existing.b2,
+    scoreA: raw.scoreA ?? existing.score_a,
+    scoreB: raw.scoreB ?? existing.score_b,
+    contribA: raw.contribA ?? existing.contrib_a,
+    contribB: raw.contribB ?? existing.contrib_b,
+  };
+  const players = await loadPlayers(db, gid);
+  // Editing may reference a player who has since been benched, so allow any
+  // player in the group here rather than only currently-active ones.
+  const groupIds = new Set(players.map((p) => p.id));
+
+  const invalid = validateMatchInput(b, groupIds);
+  if (invalid) return c.json({ error: invalid }, 400);
+
+  await db
+    .prepare(
+      `UPDATE matches
+          SET a1 = ?, a2 = ?, b1 = ?, b2 = ?, score_a = ?, score_b = ?,
+              contrib_a = ?, contrib_b = ?
+        WHERE id = ? AND group_id = ?`,
+    )
+    .bind(
+      b.a1,
+      b.a2,
+      b.b1,
+      b.b2,
+      b.scoreA,
+      b.scoreB,
+      clampContrib(b.contribA ?? 0.5),
+      clampContrib(b.contribB ?? 0.5),
+      id,
+      gid,
+    )
+    .run();
+
+  await recompute(db, gid);
+  return c.json({ ok: true });
+});
+
 app.delete("/api/groups/:gid/matches/:id", async (c) => {
   if (c.get("role") !== "admin") {
     return c.json({ error: "Only the group admin can delete matches" }, 403);
@@ -1023,6 +1113,52 @@ app.delete("/api/groups/:gid/matches/:id", async (c) => {
   }
   await recompute(c.env.DB, gid);
   return c.json({ ok: true });
+});
+
+/** Export the group's full match log as CSV — one row per match. */
+app.get("/api/groups/:gid/export.csv", async (c) => {
+  const db = c.env.DB;
+  const gid = c.get("groupId");
+  const [players, matchRows, group] = await Promise.all([
+    loadPlayers(db, gid),
+    loadMatches(db, gid),
+    db.prepare("SELECT name FROM groups WHERE id = ?").bind(gid).first<{
+      name: string;
+    }>(),
+  ]);
+  const { events } = replayMatches(matchRows.map(toMatchRecord));
+  const names = new Map(players.map((p) => [p.id, p.name]));
+  const nm = (id: number) => names.get(id) ?? "?";
+  const deltaFor = (matchId: number, playerId: number) =>
+    events
+      .find((e) => e.matchId === matchId && e.playerId === playerId)
+      ?.delta.toFixed(2) ?? "";
+
+  // Quote every field: player names can contain commas or quotes.
+  const q = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+  const header = [
+    "match_id", "played_at", "team_a_1", "team_a_2", "team_b_1", "team_b_2",
+    "score_a", "score_b", "winner", "delta_a1", "delta_a2", "delta_b1", "delta_b2",
+  ];
+  const lines = [header.join(",")];
+  for (const m of matchRows) {
+    lines.push(
+      [
+        m.id, m.played_at, nm(m.a1), nm(m.a2), nm(m.b1), nm(m.b2),
+        m.score_a, m.score_b, m.score_a > m.score_b ? "A" : "B",
+        deltaFor(m.id, m.a1), deltaFor(m.id, m.a2),
+        deltaFor(m.id, m.b1), deltaFor(m.id, m.b2),
+      ].map(q).join(","),
+    );
+  }
+
+  const slug = (group?.name ?? "group").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  return new Response(lines.join("\n"), {
+    headers: {
+      "content-type": "text/csv; charset=utf-8",
+      "content-disposition": `attachment; filename="pickle-royale-${slug}.csv"`,
+    },
+  });
 });
 
 app.patch("/api/groups/:gid/settings", async (c) => {

@@ -263,6 +263,27 @@ export const api = {
       method: "DELETE",
     }),
 
+  /** Correct a logged match. Omitted fields keep their stored value. */
+  editMatch: (
+    id: number,
+    input: Partial<{
+      a1: number;
+      a2: number;
+      b1: number;
+      b2: number;
+      scoreA: number;
+      scoreB: number;
+      contribA: number;
+      contribB: number;
+    }>,
+  ) =>
+    req<{ ok: true }>(`/api/groups/${gid()}/matches/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
+
+  exportCsvUrl: () => `/api/groups/${gid()}/export.csv`,
+
   // claiming + invites (Phase 2)
   invitePlayer: (playerId: number, email: string) =>
     req<{ linked?: boolean; invited?: boolean; sent?: boolean }>(

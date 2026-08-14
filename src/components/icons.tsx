@@ -101,6 +101,21 @@ export const CloseIcon = (p: P) => (
   </Svg>
 );
 
+export const PencilIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 20h4l10-10a2.8 2.8 0 0 0-4-4L4 16v4z" />
+    <path d="M13.5 6.5l4 4" />
+  </Svg>
+);
+
+export const DownloadIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 4v11" />
+    <path d="M8 11l4 4 4-4" />
+    <path d="M5 19h14" />
+  </Svg>
+);
+
 export const ShareIcon = (p: P) => (
   <Svg {...p}>
     <path d="M12 4v12" />
