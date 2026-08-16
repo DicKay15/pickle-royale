@@ -229,6 +229,12 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(input),
     }),
+  /** Permanently delete the current group. `name` must match exactly to confirm. */
+  deleteGroup: (name: string) =>
+    req<{ ok: true }>(`/api/groups/${gid()}`, {
+      method: "DELETE",
+      body: JSON.stringify({ name }),
+    }),
 
   // group-scoped data
   leaderboard: () =>

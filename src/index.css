@@ -2833,6 +2833,12 @@ input {
   box-shadow: 0 1px 0 var(--ink);
 }
 
+.acct-row-link.danger {
+  justify-content: center;
+  color: var(--coral);
+  border-color: var(--coral);
+}
+
 .acct-row-ico {
   width: 18px;
   height: 18px;

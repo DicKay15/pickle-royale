@@ -1183,6 +1183,33 @@ app.patch("/api/groups/:gid/settings", async (c) => {
   return c.json({ ok: true });
 });
 
+/** Permanently delete a group and everything in it. Admin only, irreversible. */
+app.delete("/api/groups/:gid", async (c) => {
+  if (c.get("role") !== "admin") {
+    return c.json({ error: "Only the group admin can delete this group" }, 403);
+  }
+  const gid = c.get("groupId");
+  const body = (await c.req.json().catch(() => ({}))) as { name?: string };
+  const group = await c.env.DB.prepare("SELECT name FROM groups WHERE id = ?")
+    .bind(gid)
+    .first<{ name: string }>();
+  if (!group) return c.json({ error: "Group not found" }, 404);
+  if ((body.name ?? "").trim() !== group.name) {
+    return c.json({ error: "Type the group name exactly to confirm deletion" }, 400);
+  }
+
+  const db = c.env.DB;
+  await db.batch([
+    db.prepare("DELETE FROM rating_events WHERE group_id = ?").bind(gid),
+    db.prepare("DELETE FROM claim_requests WHERE group_id = ?").bind(gid),
+    db.prepare("DELETE FROM matches WHERE group_id = ?").bind(gid),
+    db.prepare("DELETE FROM players WHERE group_id = ?").bind(gid),
+    db.prepare("DELETE FROM group_members WHERE group_id = ?").bind(gid),
+    db.prepare("DELETE FROM groups WHERE id = ?").bind(gid),
+  ]);
+  return c.json({ ok: true });
+});
+
 // ---------- claim / invite (Phase 2) ----------
 
 /** Admin or the player's adder attaches an invite email to an unclaimed player.

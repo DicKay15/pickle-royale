@@ -9,6 +9,7 @@ import {
 } from "../api";
 import { ProfileHero, AchievementsGrid } from "./profileParts";
 import { DownloadIcon } from "./icons";
+import Modal from "./Modal";
 
 export default function ProfileTab({
   me,
@@ -109,6 +110,29 @@ export default function ProfileTab({
       showToast(e instanceof Error ? e.message : "Couldn't update");
     } finally {
       setResolving(null);
+    }
+  };
+
+  // admin: delete group (irreversible)
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmName, setConfirmName] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const closeDelete = () => {
+    setDeleteOpen(false);
+    setConfirmName("");
+  };
+  const deleteGroup = async () => {
+    if (deleting || confirmName.trim() !== currentGroup.name) return;
+    setDeleting(true);
+    try {
+      await api.deleteGroup(confirmName.trim());
+      closeDelete();
+      showToast(`"${currentGroup.name}" deleted`);
+      onRefresh();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Couldn't delete group");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -258,12 +282,54 @@ export default function ProfileTab({
               </div>
             </>
           )}
+
+          <button
+            className="acct-row-link danger"
+            style={{ marginTop: 14 }}
+            onClick={() => setDeleteOpen(true)}
+          >
+            Delete group
+          </button>
+          <div className="acct-hint">
+            Permanently removes {currentGroup.name}, its players, matches, and
+            ratings for everyone. This can't be undone.
+          </div>
         </>
       )}
 
       <button className="cta secondary" style={{ marginTop: 18 }} onClick={signOut}>
         Sign out
       </button>
+
+      {deleteOpen && (
+        <Modal title={`Delete ${currentGroup.name}?`} onClose={closeDelete}>
+          <div className="info-body">
+            This permanently deletes the group, every player, every match, and
+            all rating history for everyone in it. This can't be undone. Type{" "}
+            <b>{currentGroup.name}</b> to confirm.
+          </div>
+          <input
+            className="field-input"
+            value={confirmName}
+            onChange={(e) => setConfirmName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && deleteGroup()}
+            placeholder={currentGroup.name}
+            autoFocus
+          />
+          <div className="modal-actions">
+            <button className="cta secondary" onClick={closeDelete} disabled={deleting}>
+              Cancel
+            </button>
+            <button
+              className="cta danger"
+              onClick={deleteGroup}
+              disabled={deleting || confirmName.trim() !== currentGroup.name}
+            >
+              {deleting ? "…" : "Delete forever"}
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
