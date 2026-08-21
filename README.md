@@ -7,6 +7,10 @@ Playful pickleball rankings + match-log for weekly 2v2 games.
 **📚 Full documentation:** [`docs/`](docs/README.md) — product, architecture,
 algorithm, decisions, the bugs we hit, roadmap, and how to operate it.
 
+**🎨 Design language:** [`docs/DESIGN-LANGUAGE.md`](docs/DESIGN-LANGUAGE.md) — the
+canonical spec for how Pickle Royale looks on every platform. Read it before
+touching any UI, here or in the mobile app.
+
 ## What it does
 - Log a 2v2 match: pick teams, enter the score, set a "who carried?" contribution split
 - Auto-calculates everyone's **Royale Rating** (custom Elo) and re-ranks the leaderboard
