@@ -1,4 +1,4 @@
-# Pickle Royale — Design Language
+# Pickle Royale: Design Language
 
 **Status: canonical.** This file is the source of truth for how Pickle Royale
 looks and feels, on every platform. The web app (`src/index.css`) is the
@@ -63,7 +63,7 @@ do not introduce a "muted" variant on the fly.
 ## 3. Type
 
 Three families. All self-hosted. No system-font fallback is ever acceptable in
-shipped UI — a system-font leak is the single most obvious "this is the cheap
+shipped UI. A system-font leak is the single most obvious "this is the cheap
 version" tell.
 
 | Role | Family | Where |
@@ -98,7 +98,7 @@ matches"), it is Bricolage. This is what makes ratings feel authoritative.
 
 ---
 
-## 4. Construction — the part that makes or breaks it
+## 4. Construction, the part that makes or breaks it
 
 This is the section that separates a real Pickle Royale surface from a
 generic one. Every one of these is load-bearing.
@@ -145,7 +145,7 @@ it does not fade, it does not lift.
 Transition: `0.12s–0.15s ease` on `transform` and `box-shadow` only.
 
 Hover lift (`translateY(-2px)`, `0 5px 0`) exists **only** behind
-`@media (hover: hover)` — it is a desktop-mouse affordance and must never
+`@media (hover: hover)`, because it is a desktop-mouse affordance and must never
 appear on touch.
 
 ### 4.4 Radius
@@ -186,7 +186,7 @@ The page background is `cream` plus two layers:
    2 octaves).
 
 It is *grain*, not a dot grid. A regular repeating dot pattern is explicitly
-wrong — it reads as generated-template texture and violates the house
+wrong: it reads as generated-template texture and violates the house
 anti-slop rules. If the platform cannot do fractal noise, use a tiled noise
 bitmap, not circles on a lattice.
 
@@ -196,7 +196,7 @@ bitmap, not circles on a lattice.
 
 ### 5.1 Masthead
 
-Mascot badge 58×58 with `drop-shadow(0 3px 0 ink)` — the mascot casts the same
+Mascot badge 58×58 with `drop-shadow(0 3px 0 ink)`, so the mascot casts the same
 hard shadow as everything else. Tapping it wiggles it
 (`rotate -12° → 9° → -5°`, 0.55s); five taps fires an easter-egg toast.
 
@@ -243,7 +243,7 @@ record] [rating 20px mono + sparkline]`
 
 ### 5.5 Tab bar
 
-Floating pill, **content-hugging and centred** — not a full-width bar.
+Floating pill, **content-hugging and centred**, not a full-width bar.
 `court-deep` fill, 2px ink, `999px`, `0 5px 0`, 6px padding, sits
 `12px + safe-area` above the bottom edge.
 
@@ -263,14 +263,14 @@ Centre action: 58px lime circle, 2px ink, `0 4px 0`, pulled **up 16px**
 - **Shuffle buttons** (`WHO'S UP?`, `BALANCE`): pill, `lime-soft` fill,
   13px **display uppercase**, `0 2px 0`. Disabled → `opacity 0.45`.
 - **Team zones** sit side by side with a vertical `NET` divider between them.
-  Each is white fading to its tint at 140% — the top of the card is still white.
+  Each is white fading to its tint at 140%, so the top of the card is still white.
   A flat pastel fill is wrong.
 - **Score block**: 72px mono 900 in the team colour, above a stepper.
   Stepper is one unit: `[− 40px][+ 40px][+5 40px][+11 40px]`, 50px tall,
   12px radius, 2px ink, `0 3px 0`. Presets have an ink left-border and a
   `cream-dim` fill. **The two steppers must sit inside the 16px page gutter and
   align with the team zones above them.**
-- **Carry slider**: a tug-of-war track — 14px tall, 2px ink, pill radius, with a
+- **Carry slider**: a tug-of-war track. 14px tall, 2px ink, pill radius, with a
   centre tick and a band growing from the centre toward whoever carried.
   Thumb 26px white circle, 2px ink, `0 2px 0`.
 - **CTA**: full width, 20px display uppercase, lime, 18px radius, `0 5px 0`,
@@ -331,7 +331,7 @@ shadow**. Multiplier suffix (`×2`) in coral mono.
 | Press feedback | 100–150ms | `ease` |
 | Page enter | 350ms | `cubic-bezier(0.2, 0.9, 0.3, 1)`, from `translateY(10px)` + `opacity 0` |
 | Sheet up | 350ms | `cubic-bezier(0.2, 0.9, 0.3, 1)` |
-| Modal pop | 350–450ms | `cubic-bezier(0.2, 1.4, 0.4, 1)` — overshoots on purpose |
+| Modal pop | 350–450ms | `cubic-bezier(0.2, 1.4, 0.4, 1)`, overshoots on purpose |
 | Ambient loops (crown bob, mascot) | 3–3.4s | `ease-in-out`, infinite |
 | Tagline cycle | 5s hold, 500ms fade | `ease` |
 
@@ -349,14 +349,14 @@ ambient loops stop, the tagline stops rotating, and durations collapse to
 Every view ships four states. A view that only handles "loaded with data" is
 not finished.
 
-- **Loading** — the bobbing mascot plus a witty line ("Chalking the lines…",
+- **Loading**: the bobbing mascot plus a witty line ("Chalking the lines…",
   "Warming up the court…"), then skeletons whose heights match the real content
   (78px for a board row).
-- **Empty** — 2px **dashed** `ink-soft` border, translucent white fill, a 44px
+- **Empty**: 2px **dashed** `ink-soft` border, translucent white fill, a 44px
   bobbing emoji, an 18px display uppercase title, a 13px body line, and one CTA.
-- **Error** — an inline card with the message and a retry action. Never a bare
+- **Error**: an inline card with the message and a retry action. Never a bare
   error string.
-- **Long content** — names truncate with ellipsis (`8.5ch` on the champion,
+- **Long content**: names truncate with ellipsis (`8.5ch` on the champion,
   single-line on rows). Layout never reflows to accommodate a long name.
 
 ---
@@ -365,7 +365,7 @@ not finished.
 
 - Every interactive target is **≥44px**.
 - Focus is visible everywhere: `3px solid court`, `2px` offset.
-- Colour is never the only signal — streaks carry an emoji, deltas carry a sign,
+- Colour is never the only signal. Streaks carry an emoji, deltas carry a sign,
   the active tab carries a filled background as well as a colour change.
 - Icon-only buttons carry an `aria-label` / `accessibilityLabel`.
 - Emoji used decoratively are hidden from assistive tech.
@@ -379,7 +379,7 @@ This design deliberately clears the house 30-rule list
 
 - Background is `#FBF6EA`, not `#fff`. Dark surfaces are `#0C3B2D`, not `#000`.
 - No blur, no glassmorphism, no backdrop-filter on content surfaces (scrims only).
-- No radial orbs. No dot-grid background — grain only.
+- No radial orbs. No dot-grid background, grain only.
 - Radius varies by element size; it is not uniformly `rounded-xl`.
 - Shadows are hard printed offsets, not default elevation.
 - Icons are custom inline SVG. **No Lucide.** No sparkle glyphs.
