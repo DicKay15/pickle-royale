@@ -29,9 +29,14 @@ export interface SessionUser {
   advanced_mode: number;
 }
 
-function secret(env: Env): string {
-  // Local dev falls back to an insecure secret; production must set SESSION_SECRET.
-  return env.SESSION_SECRET || "dev-insecure-secret-change-me";
+/**
+ * Key for signing session cookies and invite links. Fails closed: without
+ * SESSION_SECRET the Worker refuses to sign or verify anything, so a missing
+ * secret can never fall back to a key that is readable in this repo.
+ */
+export function sessionSecret(env: Env): string {
+  if (!env.SESSION_SECRET) throw new Error("SESSION_SECRET is not set");
+  return env.SESSION_SECRET;
 }
 
 function isHttps(c: Ctx): boolean {
@@ -44,7 +49,7 @@ export async function currentUser(c: Ctx): Promise<SessionUser | null> {
   const token = getCookie(c, COOKIE);
   if (!token) return null;
   try {
-    const payload = await verify(token, secret(env), "HS256");
+    const payload = await verify(token, sessionSecret(env), "HS256");
     const uid = Number((payload as { uid?: number }).uid);
     if (!uid) return null;
     const row = await env.DB.prepare(
@@ -60,7 +65,7 @@ export async function currentUser(c: Ctx): Promise<SessionUser | null> {
 
 export async function setSession(c: Ctx, uid: number): Promise<void> {
   const exp = Math.floor(Date.now() / 1000) + SESSION_DAYS * 86400;
-  const token = await sign({ uid, exp }, secret(c.env));
+  const token = await sign({ uid, exp }, sessionSecret(c.env));
   setCookie(c, COOKIE, token, {
     httpOnly: true,
     secure: isHttps(c),

@@ -1,6 +1,6 @@
 import { Hono, type MiddlewareHandler } from "hono";
 import { sign, verify } from "hono/jwt";
-import { auth, currentUser, setSession, type Env, type SessionUser } from "./auth";
+import { auth, currentUser, sessionSecret, setSession, type Env, type SessionUser } from "./auth";
 import { createDemoAccount, isDemoEmail, sweepDemoAccounts } from "./demo";
 import { privacyPage, supportPage } from "./legal";
 import {
@@ -174,10 +174,6 @@ function genCode(): string {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("")
     .toUpperCase();
-}
-
-function sessionSecret(env: Env): string {
-  return env.SESSION_SECRET || "dev-insecure-secret-change-me";
 }
 
 interface InvitePayload {
