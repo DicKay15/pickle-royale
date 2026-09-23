@@ -1,5 +1,5 @@
-import { createPortal } from "react-dom";
 import type { Info } from "../statInfo";
+import { Overlay, OverlayDescription, OverlayTitle } from "./ui/Overlay";
 
 /** Tap-to-learn bottom sheet explaining a single stat or badge. */
 export default function InfoSheet({
@@ -10,19 +10,13 @@ export default function InfoSheet({
   onClose: () => void;
 }) {
   if (!info) return null;
-  return createPortal(
-    <div
-      className="sheet-backdrop"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={info.title}>
-        <h3>{info.title}</h3>
-        <p className="info-body">{info.body}</p>
-        <button className="cta" onClick={onClose}>
-          Got it
-        </button>
-      </div>
-    </div>,
-    document.body,
+  return (
+    <Overlay surface="sheet" onClose={onClose}>
+      <OverlayTitle>{info.title}</OverlayTitle>
+      <OverlayDescription className="info-body">{info.body}</OverlayDescription>
+      <button className="cta" onClick={onClose}>
+        Got it
+      </button>
+    </Overlay>
   );
 }

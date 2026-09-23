@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Modal from "./Modal";
-import Stepper from "./Stepper";
+import ScoreField from "./ScoreField";
 import { api, type MatchEntry } from "../api";
 
 /**
@@ -57,15 +57,12 @@ export default function EditMatchModal({
       <div className="edit-match">
         <div className="edit-row">
           <div className="edit-team a">{names(match.teamA)}</div>
-          <div className="score-big a" aria-live="polite">
-            {scoreA}
-          </div>
-          <Stepper
+          <ScoreField
             value={scoreA}
             onChange={setScoreA}
             label={`${names(match.teamA)} score`}
+            tone="a"
             presets={[5, 11]}
-            hideVal
           />
         </div>
 
@@ -73,15 +70,12 @@ export default function EditMatchModal({
 
         <div className="edit-row">
           <div className="edit-team b">{names(match.teamB)}</div>
-          <div className="score-big b" aria-live="polite">
-            {scoreB}
-          </div>
-          <Stepper
+          <ScoreField
             value={scoreB}
             onChange={setScoreB}
             label={`${names(match.teamB)} score`}
+            tone="b"
             presets={[5, 11]}
-            hideVal
           />
         </div>
 

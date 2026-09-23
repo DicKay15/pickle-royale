@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import Stepper from "./Stepper";
+import ScoreField from "./ScoreField";
 import { bestSplit, pickRandom, fairnessLabel } from "../../shared/teams";
 import { api, type BoardEntry, type LogResult } from "../api";
 
@@ -454,13 +454,11 @@ export default function LogMatch({
       <div className="score-block">
         <div className="score-col a">
           <div className="who">Green</div>
-          <div className="score-big a" aria-live="polite">{scoreA}</div>
-          <Stepper value={scoreA} onChange={setScoreA} label="Team Green score" presets={[5, 11]} hideVal />
+          <ScoreField value={scoreA} onChange={setScoreA} label="Team Green score" tone="a" presets={[5, 11]} />
         </div>
         <div className="score-col b">
           <div className="who">Orange</div>
-          <div className="score-big b" aria-live="polite">{scoreB}</div>
-          <Stepper value={scoreB} onChange={setScoreB} label="Team Orange score" presets={[5, 11]} hideVal />
+          <ScoreField value={scoreB} onChange={setScoreB} label="Team Orange score" tone="b" presets={[5, 11]} />
         </div>
       </div>
 

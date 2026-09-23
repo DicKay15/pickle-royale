@@ -12,6 +12,7 @@
     "db:remote": "wrangler d1 migrations apply pickle-royale --remote"
   },
   "dependencies": {
+    "@base-ui/react": "^1.8.0",
     "hono": "^4.6.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

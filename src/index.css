@@ -880,6 +880,28 @@ input {
   background: var(--cream-dim);
 }
 
+/* ScoreField: the big number is the real input */
+.score-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.score-input {
+  width: 3ch;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  caret-color: currentColor;
+}
+.score-input:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 4px;
+}
+
 .stepper .val {
   font-family: var(--font-mono);
   font-weight: 800;
@@ -1895,6 +1917,27 @@ input {
   font-size: 24px;
   text-transform: uppercase;
   color: var(--court-deep);
+}
+
+/* GroupPicker opened as a dialog: the popup is a bare wrapper, the card inside keeps its look */
+.picker-popup {
+  width: 100%;
+  max-width: 380px;
+  margin-top: 40px; /* room for the mascot that peeks over the card */
+}
+.picker-title-start,
+.picker-sub.picker-sub-start {
+  text-align: left;
+}
+.picker-sub.picker-sub-start {
+  margin: 4px 0 14px;
+}
+/* Base UI moves focus into the popup; the container itself never needs a ring */
+.modal-card:focus,
+.sheet:focus,
+.acct-card:focus,
+.picker-popup:focus {
+  outline: none;
 }
 
 .picker-sub {

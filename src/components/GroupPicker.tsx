@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
+import { Overlay, OverlayClose } from "./ui/Overlay";
 import { api, type MeGroup } from "../api";
 
 export default function GroupPicker({
@@ -52,11 +52,7 @@ export default function GroupPicker({
 
   const body = (
     <div className="picker-card">
-      {onClose && (
-        <button className="sheet-x" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
-      )}
+      {onClose && !firstRun && <OverlayClose />}
       <img className="picker-mascot" src="/mascot.svg" alt="" />
       <h2 className="picker-title">
         {firstRun ? "Welcome to the Royale" : "New group"}
@@ -112,5 +108,16 @@ export default function GroupPicker({
   );
 
   if (firstRun) return <div className="auth-screen">{body}</div>;
-  return createPortal(<div className="sheet-overlay">{body}</div>, document.body);
+  // Opened from inside the app: a real dialog. Without an onClose there is no
+  // way back, so it stays mounted until a group is picked.
+  return (
+    <Overlay
+      surface="card"
+      popupClassName="picker-popup"
+      onClose={onClose ?? (() => {})}
+      label={mode === "create" ? "Create a group" : "Join a group"}
+    >
+      {body}
+    </Overlay>
+  );
 }

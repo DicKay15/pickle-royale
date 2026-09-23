@@ -1,8 +1,7 @@
 import { type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { Overlay, OverlayClose, OverlayDescription, OverlayTitle } from "./ui/Overlay";
 
-/** Centered modal (for actions + confirmations). Portalled to body so it always
- *  sits above the navbar and any stacking context. */
+/** Centered modal (for actions + confirmations). Behaviour lives in ui/Overlay. */
 export default function Modal({
   title,
   onClose,
@@ -12,28 +11,23 @@ export default function Modal({
   onClose: () => void;
   children: ReactNode;
 }) {
-  return createPortal(
-    <div
-      className="modal-overlay"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="modal-card" role="dialog" aria-modal="true" aria-label={title}>
-        {title && (
-          <div className="modal-head">
-            <h3>{title}</h3>
-            <button className="sheet-x" onClick={onClose} aria-label="Close">
-              ✕
-            </button>
-          </div>
-        )}
-        {children}
-      </div>
-    </div>,
-    document.body,
+  return (
+    <Overlay surface="modal" onClose={onClose} label={title ? undefined : "Dialog"}>
+      {title && (
+        <div className="modal-head">
+          <OverlayTitle>{title}</OverlayTitle>
+          <OverlayClose />
+        </div>
+      )}
+      {children}
+    </Overlay>
   );
 }
 
-/** Yes/no confirmation built on Modal. */
+/**
+ * Yes/no confirmation. An alertdialog: the scrim doesn't dismiss it, and
+ * focus starts on Cancel so Enter never confirms a delete by accident.
+ */
 export function ConfirmModal({
   title,
   body,
@@ -52,20 +46,24 @@ export function ConfirmModal({
   onClose: () => void;
 }) {
   return (
-    <Modal title={title} onClose={onClose}>
-      {body && <div className="info-body">{body}</div>}
+    <Overlay surface="modal" alert onClose={busy ? () => {} : onClose}>
+      <div className="modal-head">
+        <OverlayTitle>{title}</OverlayTitle>
+      </div>
+      {body && <OverlayDescription className="info-body">{body}</OverlayDescription>}
       <div className="modal-actions">
-        <button className="cta secondary" onClick={onClose} disabled={busy}>
+        <button className="cta secondary" onClick={onClose} disabled={busy} autoFocus>
           Cancel
         </button>
         <button
           className={`cta ${danger ? "danger" : ""}`}
           onClick={onConfirm}
           disabled={busy}
+          aria-busy={busy || undefined}
         >
           {busy ? "…" : confirmLabel}
         </button>
       </div>
-    </Modal>
+    </Overlay>
   );
 }

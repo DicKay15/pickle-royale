@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { Overlay, OverlayClose, OverlayDescription, OverlayTitle } from "./ui/Overlay";
 import { api, type BoardEntry } from "../api";
 
 export default function ClaimSheet({
@@ -36,22 +36,19 @@ export default function ClaimSheet({
     }
   };
 
-  return createPortal(
-    <div className="sheet-overlay" onClick={onClose}>
-      <div className="acct-card" onClick={(e) => e.stopPropagation()}>
-        <button className="sheet-x" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
-        <h2 className="picker-title" style={{ textAlign: "left" }}>
+  return (
+    <Overlay surface="card" onClose={onClose}>
+        <OverlayClose />
+        <OverlayTitle as="h2" className="picker-title picker-title-start">
           Which one is you?
-        </h2>
-        <p className="picker-sub" style={{ textAlign: "left", margin: "4px 0 14px" }}>
+        </OverlayTitle>
+        <OverlayDescription className="picker-sub picker-sub-start">
           Claim your name to get your own profile and stats. If the admin already
           added your email, you'll be linked instantly; otherwise they'll get a
           request to approve.
-        </p>
+        </OverlayDescription>
 
-        {!players && <div className="skel" style={{ height: 120 }} />}
+        {!players && <div className="skel" style={{ height: 120 }} aria-label="Loading names" role="status" />}
 
         {players && players.length === 0 && (
           <div className="acct-hint">
@@ -77,8 +74,6 @@ export default function ClaimSheet({
             ))}
           </div>
         )}
-      </div>
-    </div>,
-    document.body,
+    </Overlay>
   );
 }
