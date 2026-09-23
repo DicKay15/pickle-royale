@@ -13,7 +13,7 @@ A ladder for the weekly 2v2 pickleball game my friends and I play. Log a match a
 
 ## Why it exists
 
-We kept score in WhatsApp and nobody agreed on who was actually good. Win counts were useless because the teams change every game, and an 11-9 loss against the two best players says more than a 11-2 win against beginners. So I designed a rating that understands doubles, then built the app around the one moment that matters: standing at the court, sweaty, logging a score in under ten seconds.
+We kept score in WhatsApp and nobody agreed on who was actually good. Win counts were useless because the teams change every game, and an 11-9 loss against the two best players says more than an 11-2 win against beginners. So I designed a rating that understands doubles, then built the app around the one moment that matters: standing at the court, sweaty, logging a score in under ten seconds.
 
 ## Things worth looking at
 
