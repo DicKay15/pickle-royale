@@ -1,0 +1,2 @@
+DEV_AUTH=1
+SESSION_SECRET=any-long-random-string-for-local-dev

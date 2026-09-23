@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "typecheck": "tsc --noEmit -p .",
     "test": "vitest run",
+    "check": "pnpm typecheck && pnpm test && pnpm build",
     "deploy": "vite build && wrangler deploy",
     "db:local": "wrangler d1 migrations apply pickle-royale --local",
     "db:remote": "wrangler d1 migrations apply pickle-royale --remote"
@@ -26,5 +28,6 @@
     "vite": "^6.0.0",
     "vitest": "^2.1.8",
     "wrangler": "^4.100.0"
-  }
+  },
+  "packageManager": "pnpm@10.28.0"
 }
